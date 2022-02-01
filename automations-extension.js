@@ -66,8 +66,8 @@ class AutomationsExtension extends Extension {
     }
 
     async start() {
-        this.eventBus.onPublishEntityState(this, (data) => {
-            this.findAndRun(data.entity.name, data.message.action);
+        this.eventBus.onStateChange(this, (data) => {
+            this.findAndRun(data.entity.name, data.update.action);
         });
     }
 }
