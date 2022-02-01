@@ -1,6 +1,6 @@
 const stringify = require('json-stable-stringify-without-jsonify');
 
-const ACTIONS = ['toggle', 'turn_on', 'turn_off'];
+const SERVICES = ['toggle', 'turn_on', 'turn_off'];
 
 class AutomationsExtension {
     constructor(zigbee, mqtt, state, publishEntityState, eventBus, settings, logger) {
@@ -29,22 +29,26 @@ class AutomationsExtension {
         this.logger.debug(`Registered automations: ${stringify(automations)}`);
     }
 
-    findAndRun(entity, action) {
-        this.logger.debug(`Looking for automations for entity '${entity}' and action '${action}'`);
+    findAndRun(entity, update) {
+        this.logger.debug(`Looking for automations for entity '${entity}'`);
+
         const automations = this.automationsBySource[entity];
         if (!automations) {
             return;
         }
 
         for (const automation of automations) {
-            if (automation.trigger.action !== action) {
+            if (automation.trigger.action && automation.trigger.action !== update.action) {
                 continue;
             }
-            if (!ACTIONS.includes(automation.action.service)) {
+            if (automation.trigger.state && automation.trigger.state !== update.state) {
+                continue;
+            }
+            if (!SERVICES.includes(automation.action.service)) {
                 continue;
             }
 
-            this.logger.debug(`Automation for entity '${entity}' and action '${action}': ${stringify(automation)}`);
+            this.logger.debug(`Found automation for entity '${entity}': ${stringify(automation)}`);
 
             const destination = this.zigbee.resolveEntity(automation.action.entity);
             if (!destination) {
@@ -56,20 +60,20 @@ class AutomationsExtension {
             if (automation.action.service === 'turn_on') {
                 resultState = 'ON';
             } else if (automation.action.service === 'turn_off') {
-                resultState = 'ON';
+                resultState = 'OFF';
             } else if (automation.action.service === 'toggle') {
                 const state = this.state.get(destination);
                 resultState = state.state === 'ON' ? 'OFF' : 'ON';
             }
 
-            this.logger.debug(`Run automation for entity '${entity}' and action '${action}': ${stringify(automation)}`);
+            this.logger.debug(`Run automation for entity '${entity}': ${stringify(automation)}`);
             this.mqtt.onMessage(`${this.mqttBaseTopic}/${destination.name}/set`, stringify({state: resultState}));
         }
     }
 
     async start() {
         this.eventBus.onStateChange(this, (data) => {
-            this.findAndRun(data.entity.name, data.update.action);
+            this.findAndRun(data.entity.name, data.update);
         });
     }
 

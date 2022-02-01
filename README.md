@@ -11,14 +11,25 @@
 _Example (add this into your z2m configuration.yaml):_
 
 ```yaml
- automations:
-   my_first_automation:
-     trigger:
-       entity: test_switch
-       action: single
-     action:
-       entity: Test Plug
-       service: toggle
+automations:
+  automation_by_action:
+    trigger:
+      entity: Test Switch
+      action: single
+    action:
+      entity: Test Plug
+      service: toggle
+  automation_by_state:
+    trigger:
+      entity: Test Plug
+      state: ON
+    action:
+      entity: Test Plug 2
+      service: turn_on
 ```
 
 Supported services: `turn_on`, `turn_off`, `toggle`
+
+Supported states: `ON`, `OFF` and maybe others
+
+Supported actions: `single`, `double`, `single_left`, `single_right` and others device-specific
