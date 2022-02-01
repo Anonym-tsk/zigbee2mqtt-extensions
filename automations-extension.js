@@ -1,14 +1,16 @@
-const settings = require('../../dist/util/settings');
-const logger = require('../../dist/util/logger').default;
-const Extension = require('../../dist/extension/extension').default;
 const stringify = require('json-stable-stringify-without-jsonify');
 
 const ACTIONS = ['toggle', 'turn_on', 'turn_off'];
 
-class AutomationsExtension extends Extension {
-    constructor(zigbee, mqtt, state, publishEntityState, eventBus, enableDisableExtension,
-        restartCallback, addExtension) {
-        super(zigbee, mqtt, state, publishEntityState, eventBus, enableDisableExtension, restartCallback, addExtension);
+class AutomationsExtension {
+    constructor(zigbee, mqtt, state, publishEntityState, eventBus, settings, logger) {
+        this.zigbee = zigbee;
+        this.mqtt = mqtt;
+        this.state = state;
+        this.publishEntityState = publishEntityState;
+        this.eventBus = eventBus;
+        this.settings = settings;
+        this.logger = logger;
 
         this.mqttBaseTopic = settings.get().mqtt.base_topic;
 
@@ -23,12 +25,12 @@ class AutomationsExtension extends Extension {
             return result;
         }, {});
 
-        logger.info('AutomationsExtension loaded');
-        logger.debug(`Registered automations: ${automations}`);
+        this.logger.info('AutomationsExtension loaded');
+        this.logger.debug(`Registered automations: ${stringify(automations)}`);
     }
 
     findAndRun(entity, action) {
-        logger.debug(`Looking for automations for entity '${entity}' and action '${action}'`);
+        this.logger.debug(`Looking for automations for entity '${entity}' and action '${action}'`);
         const automations = this.automationsBySource[entity];
         if (!automations) {
             return;
@@ -42,11 +44,11 @@ class AutomationsExtension extends Extension {
                 continue;
             }
 
-            logger.debug(`Found automation for entity '${entity}' and action '${action}': ${automation}`);
+            this.logger.debug(`Automation for entity '${entity}' and action '${action}': ${stringify(automation)}`);
 
             const destination = this.zigbee.resolveEntity(automation.action.entity);
             if (!destination) {
-                logger.debug(`Destination not found for entity '${automation.action.entity}'`);
+                this.logger.debug(`Destination not found for entity '${automation.action.entity}'`);
                 continue;
             }
 
@@ -60,7 +62,7 @@ class AutomationsExtension extends Extension {
                 resultState = state.state === 'ON' ? 'OFF' : 'ON';
             }
 
-            logger.info(`Run automation for entity '${entity}' and action '${action}': ${automation}`);
+            this.logger.debug(`Run automation for entity '${entity}' and action '${action}': ${stringify(automation)}`);
             this.mqtt.onMessage(`${this.mqttBaseTopic}/${destination.name}/set`, stringify({state: resultState}));
         }
     }
@@ -69,6 +71,10 @@ class AutomationsExtension extends Extension {
         this.eventBus.onStateChange(this, (data) => {
             this.findAndRun(data.entity.name, data.update.action);
         });
+    }
+
+    async stop() {
+        this.eventBus.removeListeners(this);
     }
 }
 
