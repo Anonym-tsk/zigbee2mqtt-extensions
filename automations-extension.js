@@ -130,12 +130,20 @@ class AutomationsExtension {
         this.mqtt.onMessage(`${this.mqttBaseTopic}/${destination.name}/set`, stringify({state: newState}));
     }
 
-    runAutomation(platform, automation, update) {
+    runAutomation(platform, entity, automation, update) {
         if (platform === PLATFORMS.ACTION && !automation.trigger.includes(update.action)) {
             return;
         }
-        if (platform === PLATFORMS.STATE && !automation.trigger.includes(update.state)) {
-            return;
+        if (platform === PLATFORMS.STATE) {
+            if (!automation.trigger.includes(update.state)) {
+                return;
+            }
+
+            const source = this.zigbee.resolveEntity(entity);
+            const sourceState = this.state.get(source).state;
+            if (sourceState === update.state) {
+                return;
+            }
         }
 
         for (const action of automation.action) {
@@ -157,7 +165,7 @@ class AutomationsExtension {
         }
 
         for (const automation of automations) {
-            this.runAutomation(platform, automation, update);
+            this.runAutomation(platform, entity, automation, update);
         }
     }
 
