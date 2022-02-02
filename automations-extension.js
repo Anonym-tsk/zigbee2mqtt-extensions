@@ -130,18 +130,15 @@ class AutomationsExtension {
         this.mqtt.onMessage(`${this.mqttBaseTopic}/${destination.name}/set`, stringify({state: newState}));
     }
 
-    runAutomation(platform, entity, automation, update) {
+    runAutomation(platform, automation, update, from, to) {
         if (platform === PLATFORMS.ACTION && !automation.trigger.includes(update.action)) {
             return;
         }
         if (platform === PLATFORMS.STATE) {
-            if (!automation.trigger.includes(update.state)) {
+            if (from.state === to.state) {
                 return;
             }
-
-            const source = this.zigbee.resolveEntity(entity);
-            const sourceState = this.state.get(source).state;
-            if (sourceState === update.state) {
+            if (!automation.trigger.includes(update.state)) {
                 return;
             }
         }
@@ -151,7 +148,7 @@ class AutomationsExtension {
         }
     }
 
-    findAndRun(entity, update) {
+    findAndRun(entity, update, from, to) {
         this.logger.debug(`Looking for automations for entity '${entity}'`);
 
         const platform = this.getPlatform(update);
@@ -165,13 +162,13 @@ class AutomationsExtension {
         }
 
         for (const automation of automations) {
-            this.runAutomation(platform, entity, automation, update);
+            this.runAutomation(platform, automation, update, from, to);
         }
     }
 
     async start() {
         this.eventBus.onStateChange(this, (data) => {
-            this.findAndRun(data.entity.name, data.update);
+            this.findAndRun(data.entity.name, data.update, data.from, data.to);
         });
     }
 
