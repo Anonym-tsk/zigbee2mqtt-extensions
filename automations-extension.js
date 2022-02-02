@@ -1,6 +1,24 @@
 const stringify = require('json-stable-stringify-without-jsonify');
 
-const SERVICES = ['toggle', 'turn_on', 'turn_off'];
+const PLATFORMS = {
+    ACTION: 'action',
+    STATE: 'state',
+};
+
+const SERVICES = {
+    TOGGLE: 'toggle',
+    TURN_ON: 'turn_on',
+    TURN_OFF: 'turn_off',
+};
+
+const STATES = {
+    ON: 'ON',
+    OFF: 'OFF',
+};
+
+const toArray = (item) => {
+    return Array.isArray(item) ? item : [item];
+};
 
 class AutomationsExtension {
     constructor(zigbee, mqtt, state, publishEntityState, eventBus, settings, logger) {
@@ -14,60 +32,126 @@ class AutomationsExtension {
 
         this.mqttBaseTopic = settings.get().mqtt.base_topic;
 
-        const automations = settings.get().automations || {};
-        this.automationsBySource = Object.entries(automations).reduce((result, [_, automation]) => {
-            const entity = automation.trigger.entity;
-            let current = result[entity];
-            if (!current) {
-                current = result[entity] = [];
-            }
-            current.push(automation);
-            return result;
-        }, {});
+        this.automations = this.parseConfig(settings.get().automations || {});
 
         this.logger.info('AutomationsExtension loaded');
-        this.logger.debug(`Registered automations: ${stringify(automations)}`);
+        this.logger.debug(`Registered automations: ${stringify(this.automations)}`);
+    }
+
+    parseConfig(automations) {
+        /*
+        {
+            PLATFORM: {
+                ENTITY: [{
+                    trigger: [ACTION_OR_STATE_1, ACTION_OR_STATE_2],
+                    action: [{
+                        entity: ENTITY_2,
+                        service: SERVICE
+                    }]
+                }]
+            }
+        }
+        */
+        return Object.entries(automations).reduce((result, [_, automation]) => {
+            const platform = automation.trigger.platform;
+            if (!result[platform]) {
+                result[platform] = {};
+            }
+
+            const entities = toArray(automation.trigger.entity);
+            let triggerActions;
+            let triggerStates;
+
+            if (automation.trigger.action) {
+                triggerActions = toArray(automation.trigger.action);
+            }
+            if (automation.trigger.state) {
+                triggerStates = toArray(automation.trigger.state);
+            }
+            const actions = toArray(automation.action);
+
+            for (const entity of entities) {
+                if (!result[platform][entity]) {
+                    result[platform][entity] = [];
+                }
+
+                result[platform][entity].push({
+                    trigger: triggerActions || triggerStates,
+                    action: actions,
+                });
+            }
+
+            return result;
+        }, {});
+    }
+
+    getPlatform(update) {
+        if (update.hasOwnProperty(PLATFORMS.ACTION)) {
+            return PLATFORMS.ACTION;
+        }
+        if (update.hasOwnProperty(PLATFORMS.STATE)) {
+            return PLATFORMS.STATE;
+        }
+        return null;
+    }
+
+    runAction(action) {
+        if (!Object.values(SERVICES).includes(action.service)) {
+            return;
+        }
+
+        const destination = this.zigbee.resolveEntity(action.entity);
+        if (!destination) {
+            this.logger.debug(`Destination not found for entity '${action.entity}'`);
+            return;
+        }
+
+        let resultState;
+        switch (action.service) {
+        case SERVICES.TURN_ON:
+            resultState = STATES.ON;
+            break;
+        case SERVICES.TURN_OFF:
+            resultState = STATES.OFF;
+            break;
+        case SERVICES.TOGGLE:
+            resultState = this.state.get(destination).state === STATES.ON ?
+                STATES.OFF : STATES.ON;
+            break;
+        }
+
+        this.logger.debug(`Run automation for entity '${action.entity}': ${stringify(action)}`);
+        this.mqtt.onMessage(`${this.mqttBaseTopic}/${destination.name}/set`, stringify({state: resultState}));
+    }
+
+    runAutomation(platform, automation, update) {
+        if (platform === PLATFORMS.ACTION && !automation.trigger.includes(update.action)) {
+            return;
+        }
+        if (platform === PLATFORMS.STATE && !automation.trigger.includes(update.state)) {
+            return;
+        }
+
+        for (const action of automation.action) {
+            this.runAction(action);
+        }
     }
 
     findAndRun(entity, update) {
         this.logger.debug(`Looking for automations for entity '${entity}'`);
 
-        const automations = this.automationsBySource[entity];
+        const platform = this.getPlatform(update);
+        if (!platform) {
+            return;
+        }
+
+        const automations = this.automations[platform][entity];
         if (!automations) {
             return;
         }
 
         for (const automation of automations) {
-            if (automation.trigger.action && automation.trigger.action !== update.action) {
-                continue;
-            }
-            if (automation.trigger.state && automation.trigger.state !== update.state) {
-                continue;
-            }
-            if (!SERVICES.includes(automation.action.service)) {
-                continue;
-            }
-
-            this.logger.debug(`Found automation for entity '${entity}': ${stringify(automation)}`);
-
-            const destination = this.zigbee.resolveEntity(automation.action.entity);
-            if (!destination) {
-                this.logger.debug(`Destination not found for entity '${automation.action.entity}'`);
-                continue;
-            }
-
-            let resultState;
-            if (automation.action.service === 'turn_on') {
-                resultState = 'ON';
-            } else if (automation.action.service === 'turn_off') {
-                resultState = 'OFF';
-            } else if (automation.action.service === 'toggle') {
-                const state = this.state.get(destination);
-                resultState = state.state === 'ON' ? 'OFF' : 'ON';
-            }
-
-            this.logger.debug(`Run automation for entity '${entity}': ${stringify(automation)}`);
-            this.mqtt.onMessage(`${this.mqttBaseTopic}/${destination.name}/set`, stringify({state: resultState}));
+            this.runAutomation(platform, automation, update);
         }
     }
 

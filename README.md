@@ -14,13 +14,16 @@ _Example (add this into your z2m configuration.yaml):_
 automations:
   automation_by_action:
     trigger:
+      platorm: action
       entity: Test Switch
       action: single
     action:
       entity: Test Plug
       service: toggle
+
   automation_by_state:
     trigger:
+      platform: state
       entity: Test Plug
       state: ON
     action:
@@ -28,8 +31,56 @@ automations:
       service: turn_on
 ```
 
-Supported services: `turn_on`, `turn_off`, `toggle`
+_More complex example:_
 
-Supported states: `ON`, `OFF` and maybe others
+```yaml
+automations:
+  automation_by_action:
+    trigger:
+      platorm: action
+      entity:
+      - Test Switch
+      - Test Button
+      action:
+      - single
+      - double
+      - hold
+    action:
+    - entity: Test Plug
+      service: toggle
+    - entity: Test Plug 2
+      service: toggle
 
-Supported actions: `single`, `double`, `single_left`, `single_right` and others device-specific
+  automation_by_state:
+    trigger:
+      platform: state
+      entity:
+      - Test Plug
+      - Test Plug 2
+      state:
+      - ON
+      - OFF
+    action:
+    - entity: Test Light 1
+      service: turn_on
+    - entity: Test Light 2
+      service: turn_off
+```
+
+#### Triggers
+
+| Item       | Type                   | Description                                                                  | Required                      |
+|------------|------------------------|------------------------------------------------------------------------------|-------------------------------|
+| `platform` | `string`               | `action` or `state`                                                          | **True**                      |
+| `entity`   | `string` or `string[]` | Entity name                                                                  | **True**                      |
+| `action`   | `string` or `string[]` | `single`, `double`, `single_left`, `single_right` and others device-specific | Only if `platform == action`  |
+| `state`    | `string` or `string[]` | `ON`, `OFF` and maybe others                                                 | Only if `platform == state`   |
+
+#### Actions
+
+| Item     | Type       | Description                       | Required |
+|----------|------------|-----------------------------------|----------|
+| `entity` | `string`   | Entity name                       | **True** |
+| `service` | `string`  | `turn_on`, `turn_off` or `toggle` | **True** |
+
+_Automation can have multiple actions_
