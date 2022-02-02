@@ -106,22 +106,28 @@ class AutomationsExtension {
             return;
         }
 
-        let resultState;
+        const currentState = this.state.get(destination).state;
+        let newState;
+
         switch (action.service) {
         case SERVICES.TURN_ON:
-            resultState = STATES.ON;
+            newState = STATES.ON;
             break;
         case SERVICES.TURN_OFF:
-            resultState = STATES.OFF;
+            newState = STATES.OFF;
             break;
         case SERVICES.TOGGLE:
-            resultState = this.state.get(destination).state === STATES.ON ?
+            newState = currentState === STATES.ON ?
                 STATES.OFF : STATES.ON;
             break;
         }
 
+        if (currentState === newState) {
+            return;
+        }
+
         this.logger.debug(`Run automation for entity '${action.entity}': ${stringify(action)}`);
-        this.mqtt.onMessage(`${this.mqttBaseTopic}/${destination.name}/set`, stringify({state: resultState}));
+        this.mqtt.onMessage(`${this.mqttBaseTopic}/${destination.name}/set`, stringify({state: newState}));
     }
 
     runAutomation(platform, automation, update) {
