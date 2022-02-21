@@ -156,6 +156,10 @@ class AutomationsExtension {
             return;
         }
 
+        if (!this.automations.hasOwnProperty(platform)) {
+            return;
+        }
+
         const automations = this.automations[platform][entity];
         if (!automations) {
             return;
