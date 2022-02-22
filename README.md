@@ -4,7 +4,7 @@
 
 [Read this article](https://www.zigbee2mqtt.io/advanced/more/user_extensions.html)
 
-### automations-extension.js
+### [automations-extension.js](dist/automations-extension.js)
 
 **Allows you to set up simple automations directly in z2m**
 
