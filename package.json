@@ -1,0 +1,21 @@
+{
+  "name": "zigbee2mqtt-extensions",
+  "version": "1.0.0",
+  "description": "Zigbee2MQTT Extensions",
+  "devDependencies": {
+    "typescript": "^4.5.5"
+  },
+  "scripts": {
+    "build": "tsc"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Anonym-tsk/zigbee2mqtt-extensions.git"
+  },
+  "author": "Anonym-tsk",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Anonym-tsk/zigbee2mqtt-extensions/issues"
+  },
+  "homepage": "https://github.com/Anonym-tsk/zigbee2mqtt-extensions#readme"
+}
