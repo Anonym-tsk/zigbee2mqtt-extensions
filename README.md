@@ -92,9 +92,9 @@ automations:
 
 #### Actions
 
-| Item     | Type       | Description                       | Required |
-|----------|------------|-----------------------------------|----------|
-| `entity` | `string`   | Entity name                       | **True** |
-| `service` | `string`  | `turn_on`, `turn_off` or `toggle` | **True** |
+| Item      | Type     | Description                       | Required |
+|-----------|----------|-----------------------------------|----------|
+| `entity`  | `string` | Entity name                       | **True** |
+| `service` | `string` | `turn_on`, `turn_off` or `toggle` | **True** |
 
 _Automation can have multiple actions_
