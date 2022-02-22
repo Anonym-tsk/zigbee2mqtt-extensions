@@ -29,6 +29,17 @@ automations:
     action:
       entity: Test Plug 2
       service: turn_on
+
+  automation_by_numeric_state:
+    trigger:
+      platform: numeric_state
+      entity: Test Plug
+      attribute: temperatire
+      above: 17
+      below: 26
+    action:
+      entity: Test Plug
+      service: turn_on
 ```
 
 _More complex example:_
@@ -69,12 +80,15 @@ automations:
 
 #### Triggers
 
-| Item       | Type                   | Description                                                                  | Required                      |
-|------------|------------------------|------------------------------------------------------------------------------|-------------------------------|
-| `platform` | `string`               | `action` or `state`                                                          | **True**                      |
-| `entity`   | `string` or `string[]` | Entity name                                                                  | **True**                      |
-| `action`   | `string` or `string[]` | `single`, `double`, `single_left`, `single_right` and others device-specific | Only if `platform == action`  |
-| `state`    | `string` or `string[]` | `ON`, `OFF` and maybe others                                                 | Only if `platform == state`   |
+| Item        | Type                   | Description                                                                  | Required                             |
+|-------------|------------------------|------------------------------------------------------------------------------|--------------------------------------|
+| `platform`  | `string`               | `action`, `state` or `numeric_state`                                         | **True**                             |
+| `entity`    | `string` or `string[]` | Entity name                                                                  | **True**                             |
+| `action`    | `string` or `string[]` | `single`, `double`, `single_left`, `single_right` and others device-specific | Only if `platform == action`         |
+| `state`     | `string` or `string[]` | `ON`, `OFF` and maybe others                                                 | Only if `platform == state`          |
+| `attribute` | `string`               | `temperatire`, `humidity`, `pressure` and others device-specific             | Only if `platform == numeric_state`  |
+| `above`     | `int`                  | Triggers when value crosses a given threshold                                | Only if `platform == numeric_state`  |
+| `below`     | `int`                  | Triggers when value crosses a given threshold                                | Only if `platform == numeric_state`  |
 
 #### Actions
 

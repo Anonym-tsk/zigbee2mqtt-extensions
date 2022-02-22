@@ -35,6 +35,13 @@
     "experimentalDecorators": true,
     "strictPropertyInitialization": false
   },
+  "watchOptions": {
+    "watchFile": "useFsEvents",
+    "watchDirectory": "useFsEvents",
+    "fallbackPolling": "dynamicPriority",
+    "synchronousWatchDirectory": true,
+    "excludeDirectories": ["**/node_modules", "dist"]
+  },
   "include": [
     "./src/"
   ],
