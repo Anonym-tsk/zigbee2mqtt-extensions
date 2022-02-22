@@ -87,8 +87,8 @@ automations:
 | `action`    | `string` or `string[]` | `single`, `double`, `single_left`, `single_right` and others device-specific | Only if `platform == action`         |
 | `state`     | `string` or `string[]` | `ON`, `OFF` and maybe others                                                 | Only if `platform == state`          |
 | `attribute` | `string`               | `temperatire`, `humidity`, `pressure` and others device-specific             | Only if `platform == numeric_state`  |
-| `above`     | `int`                  | Triggers when value crosses a given threshold                                | Only if `platform == numeric_state`  |
-| `below`     | `int`                  | Triggers when value crosses a given threshold                                | Only if `platform == numeric_state`  |
+| `above`     | `number`               | Triggers when value crosses a given threshold                                | Only if `platform == numeric_state`  |
+| `below`     | `number`               | Triggers when value crosses a given threshold                                | Only if `platform == numeric_state`  |
 
 #### Actions
 
