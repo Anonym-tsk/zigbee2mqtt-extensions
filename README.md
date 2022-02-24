@@ -210,7 +210,7 @@ The action of an automation rule is what is being executed when a rule fires.
 
 | Item      | Type     | Description                       |
 |-----------|----------|-----------------------------------|
-| `entity`  | `string` | Entity name                       |
+| `entity`  | `string` | Name of entity (friendly name)    |
 | `service` | `string` | `turn_on`, `turn_off` or `toggle` |
 
 _Example:_
