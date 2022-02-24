@@ -50,6 +50,14 @@ class AutomationsExtension {
                     return result;
                 }
             }
+            if (automation.condition) {
+                if (!automation.condition.entity) {
+                    return result;
+                }
+                if (!platforms.includes(automation.condition.platform)) {
+                    return result;
+                }
+            }
             const entities = toArray(automation.trigger.entity);
             for (const entityId of entities) {
                 if (!result[entityId]) {
@@ -58,10 +66,40 @@ class AutomationsExtension {
                 result[entityId].push({
                     trigger: automation.trigger,
                     action: actions,
+                    condition: automation.condition,
                 });
             }
             return result;
         }, {});
+    }
+    checkCondition(condition) {
+        const entity = this.zigbee.resolveEntity(condition.entity);
+        if (!entity) {
+            this.logger.debug(`Condition not found for entity '${condition.entity}'`);
+            return true;
+        }
+        let currentCondition;
+        let currentState;
+        switch (condition.platform) {
+            case ConfigPlatform.STATE:
+                currentCondition = condition;
+                currentState = this.state.get(entity).state;
+                if (currentState !== currentCondition.state) {
+                    return false;
+                }
+                break;
+            case ConfigPlatform.NUMERIC_STATE:
+                currentCondition = condition;
+                currentState = this.state.get(entity)[currentCondition.attribute];
+                if (typeof currentCondition.above !== 'undefined' && currentState < currentCondition.above) {
+                    return false;
+                }
+                if (typeof currentCondition.below !== 'undefined' && currentState > currentCondition.below) {
+                    return false;
+                }
+                break;
+        }
+        return true;
     }
     runActions(actions) {
         for (const action of actions) {
@@ -91,55 +129,54 @@ class AutomationsExtension {
         }
     }
     runAutomationIfMatches(automation, update, from, to) {
-        const platform = automation.trigger.platform;
-        if (platform === ConfigPlatform.ACTION) {
-            if (!update.hasOwnProperty('action')) {
-                return;
-            }
-            const trigger = automation.trigger;
-            const actions = toArray(trigger.action);
-            if (!actions.includes(update.action)) {
-                return;
-            }
-            this.runActions(automation.action);
-            return;
-        }
-        if (platform === ConfigPlatform.STATE) {
-            if (!update.hasOwnProperty('state') || !from.hasOwnProperty('state') || !to.hasOwnProperty('state')) {
-                return;
-            }
-            const trigger = automation.trigger;
-            const states = toArray(trigger.state);
-            if (from.state === to.state) {
-                return;
-            }
-            if (!states.includes(update.state)) {
-                return;
-            }
-            this.runActions(automation.action);
-            return;
-        }
-        if (platform === ConfigPlatform.NUMERIC_STATE) {
-            const trigger = automation.trigger;
-            const attribute = trigger.attribute;
-            if (!update.hasOwnProperty(attribute) || !from.hasOwnProperty(attribute) || !to.hasOwnProperty(attribute)) {
-                return;
-            }
-            if (from[attribute] === to[attribute]) {
-                return;
-            }
-            if (typeof trigger.above !== 'undefined') {
-                if (from[attribute] >= trigger.above || to[attribute] < trigger.above) {
+        let trigger;
+        switch (automation.trigger.platform) {
+            case ConfigPlatform.ACTION:
+                if (!update.hasOwnProperty('action')) {
                     return;
                 }
-            }
-            if (typeof trigger.below !== 'undefined') {
-                if (from[attribute] <= trigger.below || to[attribute] > trigger.below) {
+                trigger = automation.trigger;
+                const actions = toArray(trigger.action);
+                if (!actions.includes(update.action)) {
                     return;
                 }
-            }
+                break;
+            case ConfigPlatform.STATE:
+                if (!update.hasOwnProperty('state') || !from.hasOwnProperty('state') || !to.hasOwnProperty('state')) {
+                    return;
+                }
+                trigger = automation.trigger;
+                const states = toArray(trigger.state);
+                if (from.state === to.state) {
+                    return;
+                }
+                if (!states.includes(update.state)) {
+                    return;
+                }
+                break;
+            case ConfigPlatform.NUMERIC_STATE:
+                trigger = automation.trigger;
+                const attribute = trigger.attribute;
+                if (!update.hasOwnProperty(attribute) || !from.hasOwnProperty(attribute) || !to.hasOwnProperty(attribute)) {
+                    return;
+                }
+                if (from[attribute] === to[attribute]) {
+                    return;
+                }
+                if (typeof trigger.above !== 'undefined') {
+                    if (from[attribute] >= trigger.above || to[attribute] < trigger.above) {
+                        return;
+                    }
+                }
+                if (typeof trigger.below !== 'undefined') {
+                    if (from[attribute] <= trigger.below || to[attribute] > trigger.below) {
+                        return;
+                    }
+                }
+                break;
+        }
+        if (!automation.condition || this.checkCondition(automation.condition)) {
             this.runActions(automation.action);
-            return;
         }
     }
     findAndRun(entityId, update, from, to) {

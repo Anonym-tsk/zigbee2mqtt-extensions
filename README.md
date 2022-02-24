@@ -1,10 +1,10 @@
 # Zigbee2MQTT Extensions
 
-### What are extensions?
+## What are extensions?
 
 [Read this article](https://www.zigbee2mqtt.io/advanced/more/user_extensions.html)
 
-### [automations-extension.js](dist/automations-extension.js)
+## [automations-extension.js](dist/automations-extension.js)
 
 **Allows you to set up simple automations directly in z2m**
 
@@ -56,6 +56,10 @@ automations:
       - single
       - double
       - hold
+    condition:
+      platorm: state
+      entity: Test Switch 2
+      state: ON
     action:
     - entity: Test Plug
       service: toggle
@@ -78,23 +82,145 @@ automations:
       service: turn_off
 ```
 
-#### Triggers
+### Triggers
 
-| Item        | Type                   | Description                                                                  | Required                             |
-|-------------|------------------------|------------------------------------------------------------------------------|--------------------------------------|
-| `platform`  | `string`               | `action`, `state` or `numeric_state`                                         | **True**                             |
-| `entity`    | `string` or `string[]` | Entity name                                                                  | **True**                             |
-| `action`    | `string` or `string[]` | `single`, `double`, `single_left`, `single_right` and others device-specific | Only if `platform == action`         |
-| `state`     | `string` or `string[]` | `ON`, `OFF` and maybe others                                                 | Only if `platform == state`          |
-| `attribute` | `string`               | `temperatire`, `humidity`, `pressure` and others device-specific             | Only if `platform == numeric_state`  |
-| `above`     | `number`               | Triggers when value crosses a given threshold                                | Only if `platform == numeric_state`  |
-| `below`     | `number`               | Triggers when value crosses a given threshold                                | Only if `platform == numeric_state`  |
+Triggers are what starts the processing of an automation rule.
+When any of the automation’s triggers becomes true (trigger fires), Z2M will validate the conditions, if any, and call the action.
 
-#### Actions
+#### Action Trigger
 
-| Item      | Type     | Description                       | Required |
-|-----------|----------|-----------------------------------|----------|
-| `entity`  | `string` | Entity name                       | **True** |
-| `service` | `string` | `turn_on`, `turn_off` or `toggle` | **True** |
+Fires when action of given entities changes.
+
+| Item        | Type                   | Description                                                                  |
+|-------------|------------------------|------------------------------------------------------------------------------|
+| `platform`  | `string`               | `action`                                                                     |
+| `entity`    | `string` or `string[]` | Name of entity (friendly name)                                               |
+| `action`    | `string` or `string[]` | `single`, `double`, `single_left`, `single_right` and others device-specific |
+
+_Example:_
+
+```yaml
+trigger:
+  platorm: action
+  entity: My Switch
+  action:
+    - single
+    - double
+```
+
+#### State Trigger
+
+Fires when state of given entities changes.
+
+| Item        | Type                   | Description                      |
+|-------------|------------------------|----------------------------------|
+| `platform`  | `string`               | `state`                          |
+| `entity`    | `string` or `string[]` | Name of entity (friendly name)   |
+| `state`     | `string` or `string[]` | `ON` or `OFF`                    |
+
+_Example:_
+
+```yaml
+trigger:
+  platorm: state
+  entity:
+    - My Switch
+    - My Light
+  state: ON
+```
+
+#### Numeric State Trigger
+
+Fires when numeric attribute of given entities changes. Parameters `above` or `below` (or both) should be set.
+
+| Item        | Type                   | Description                                                      |
+|-------------|------------------------|------------------------------------------------------------------|
+| `platform`  | `string`               | `numeric_state`                                                  |
+| `entity`    | `string` or `string[]` | Name of entity (friendly name)                                   |
+| `attribute` | `string`               | `temperatire`, `humidity`, `pressure` and others device-specific |
+| `above`     | `number`               | Triggers when value crosses a given threshold                    |
+| `below`     | `number`               | Triggers when value crosses a given threshold                    |
+
+_Example:_
+
+```yaml
+trigger:
+  platorm: numeric_state
+  entity: My Sensor
+  attribute: temperature
+  above: 25
+  below: 35
+```
+
+### Conditions
+
+Conditions are an optional part of an automation rule and can be used to prevent an action from happening when triggered.
+When a condition does not return true, the automation will stop executing.
+Conditions look very similar to triggers but are very different.
+A trigger will look at events happening in the system while a condition only looks at how the system looks right now.
+A trigger can observe that a switch is being turned on. A condition can only see if a switch is currently on or off.
+
+#### State Condition
+
+Tests if an entity is a specified state.
+
+| Item        | Type     | Description                    |
+|-------------|----------|--------------------------------|
+| `platform`  | `string` | `state`                        |
+| `entity`    | `string` | Name of entity (friendly name) |
+| `state`     | `string` | `ON` or `OFF`                  |
+
+_Example:_
+
+```yaml
+condition:
+  platorm: state
+  entity: My Switch
+  state: ON
+```
+
+#### Numeric State Condition
+
+This type of condition attempts to parse the attribute of an entity as a number, and triggers if the value matches the thresholds.
+
+If both `below` and `above` are specified, both tests have to pass.
+
+| Item        | Type     | Description                                                      |
+|-------------|----------|------------------------------------------------------------------|
+| `platform`  | `string` | `numeric_state`                                                  |
+| `entity`    | `string` | Name of entity (friendly name)                                   |
+| `attribute` | `string` | `temperatire`, `humidity`, `pressure` and others device-specific |
+| `above`     | `number` | Triggers when value crosses a given threshold                    |
+| `below`     | `number` | Triggers when value crosses a given threshold                    |
+
+_Example:_
+
+```yaml
+condition:
+  platorm: numeric_state
+  entity: My Sensor
+  attribute: temperature
+  above: 25
+  below: 35
+```
+
+### Actions
+
+The action of an automation rule is what is being executed when a rule fires.
+
+| Item      | Type     | Description                       |
+|-----------|----------|-----------------------------------|
+| `entity`  | `string` | Entity name                       |
+| `service` | `string` | `turn_on`, `turn_off` or `toggle` |
+
+_Example:_
+
+```yaml
+action:
+  - entity: Test Plug
+    service: toggle
+  - entity: Test Switch
+    service: turn_on
+```
 
 _Automation can have multiple actions_
