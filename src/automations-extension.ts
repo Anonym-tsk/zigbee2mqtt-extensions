@@ -77,14 +77,14 @@ type ConfigAutomations = {
     [key: string]: {
         trigger: ConfigTrigger,
         action: ConfigAction | ConfigAction[],
-        condition?: ConfigCondition,
+        condition?: ConfigCondition | ConfigCondition[],
     }
 };
 
 type Automation = {
     trigger: ConfigTrigger,
     action: ConfigAction[],
-    condition?: ConfigCondition,
+    condition: ConfigCondition[],
 };
 
 type Automations = {
@@ -132,12 +132,13 @@ class AutomationsExtension {
                 }
             }
 
-            if (automation.condition) {
-                if (!automation.condition.entity) {
+            const conditions = automation.condition ? toArray(automation.condition) : [];
+            for (const condition of conditions) {
+                if (!condition.entity) {
                     return result;
                 }
 
-                if (!platforms.includes(automation.condition.platform)) {
+                if (!platforms.includes(condition.platform)) {
                     return result;
                 }
             }
@@ -151,7 +152,7 @@ class AutomationsExtension {
                 result[entityId].push({
                     trigger: automation.trigger,
                     action: actions,
-                    condition: automation.condition,
+                    condition: conditions,
                 });
             }
 
@@ -295,9 +296,13 @@ class AutomationsExtension {
                 break;
         }
 
-        if (!automation.condition || this.checkCondition(automation.condition)) {
-            this.runActions(automation.action);
+        for (const condition of automation.condition) {
+            if (!this.checkCondition(condition)) {
+                return;
+            }
         }
+
+        this.runActions(automation.action);
     }
 
     private findAndRun(entityId: EntityId, update: Update, from: Update, to: Update): void {

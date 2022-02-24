@@ -17,6 +17,10 @@ automations:
       platorm: action
       entity: Test Switch
       action: single
+    condition:
+      platorm: state
+      entity: Test Switch 2
+      state: ON
     action:
       entity: Test Plug
       service: toggle
@@ -57,9 +61,14 @@ automations:
       - double
       - hold
     condition:
-      platorm: state
-      entity: Test Switch 2
-      state: ON
+      - platorm: state
+        entity: Test Switch 2
+        state: ON
+      - platorm: numeric_state
+        entity: My Sensor
+        attribute: temperature
+        above: 25
+        below: 35
     action:
     - entity: Test Plug
       service: toggle
@@ -160,6 +169,8 @@ Conditions look very similar to triggers but are very different.
 A trigger will look at events happening in the system while a condition only looks at how the system looks right now.
 A trigger can observe that a switch is being turned on. A condition can only see if a switch is currently on or off.
 
+_Automation can have multiple conditions_
+
 #### State Condition
 
 Tests if an entity is a specified state.
@@ -208,6 +219,8 @@ condition:
 
 The action of an automation rule is what is being executed when a rule fires.
 
+_Automation can have multiple actions_
+
 | Item      | Type     | Description                       |
 |-----------|----------|-----------------------------------|
 | `entity`  | `string` | Name of entity (friendly name)    |
@@ -222,5 +235,3 @@ action:
   - entity: Test Switch
     service: turn_on
 ```
-
-_Automation can have multiple actions_
