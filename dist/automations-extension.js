@@ -36,7 +36,7 @@ class AutomationsExtension {
     parseConfig(automations) {
         const services = Object.values(ConfigService);
         const platforms = Object.values(ConfigPlatform);
-        return Object.entries(automations).reduce((result, [_, automation]) => {
+        return Object.values(automations).reduce((result, automation) => {
             const platform = automation.trigger.platform;
             if (!platforms.includes(platform)) {
                 return result;
@@ -53,14 +53,11 @@ class AutomationsExtension {
             const entities = toArray(automation.trigger.entity);
             for (const entityId of entities) {
                 if (!result[entityId]) {
-                    result[entityId] = {};
+                    result[entityId] = [];
                 }
-                if (!result[entityId][platform]) {
-                    result[entityId][platform] = [];
-                }
-                result[entityId][platform].push({
+                result[entityId].push({
                     trigger: automation.trigger,
-                    action: toArray(automation.action),
+                    action: actions,
                 });
             }
             return result;
@@ -93,7 +90,8 @@ class AutomationsExtension {
             this.mqtt.onMessage(`${this.mqttBaseTopic}/${destination.name}/set`, stringify({ state: newState }));
         }
     }
-    runAutomationIfMatches(platform, automation, update, from, to) {
+    runAutomationIfMatches(automation, update, from, to) {
+        const platform = automation.trigger.platform;
         if (platform === ConfigPlatform.ACTION) {
             if (!update.hasOwnProperty('action')) {
                 return;
@@ -150,10 +148,8 @@ class AutomationsExtension {
         if (!automations) {
             return;
         }
-        for (const [platform, automationsList] of Object.entries(automations)) {
-            for (const automation of automationsList) {
-                this.runAutomationIfMatches(platform, automation, update, from, to);
-            }
+        for (const automation of automations) {
+            this.runAutomationIfMatches(automation, update, from, to);
         }
     }
     async start() {

@@ -13,6 +13,7 @@
     "removeComments": true,
     "downlevelIteration": true,
     "isolatedModules": true,
+    "skipLibCheck": true,
 
     "strict": true,
     "noImplicitAny": false,
@@ -42,8 +43,6 @@
     "synchronousWatchDirectory": true,
     "excludeDirectories": ["**/node_modules", "dist"]
   },
-  "include": [
-    "./src/"
-  ],
-  "exclude": []
+  "include": ["./src/"],
+  "exclude": ["./node_modules/"]
 }

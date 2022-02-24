@@ -1,6 +1,13 @@
 // @ts-ignore
 import * as stringify from 'json-stable-stringify-without-jsonify';
 
+import type Zigbee from 'zigbee2mqtt/dist/zigbee';
+import type MQTT from 'zigbee2mqtt/dist/mqtt';
+import type State from 'zigbee2mqtt/dist/state';
+import type EventBus from 'zigbee2mqtt/dist/eventBus';
+import type Settings from 'zigbee2mqtt/dist/util/settings';
+import type Logger from 'zigbee2mqtt/dist/util/logger';
+
 function toArray<T>(item: T | T[]): T[] {
     return Array.isArray(item) ? item : [item];
 }
@@ -64,9 +71,7 @@ type Automation = {
 };
 
 type Automations = {
-    [key: EntityId]: {
-        [key in ConfigPlatform]: Automation[]
-    },
+    [key: EntityId]: Automation[],
 };
 
 class AutomationsExtension {
@@ -74,13 +79,13 @@ class AutomationsExtension {
     private readonly automations: Automations;
 
     constructor(
-        protected zigbee: any,
-        protected mqtt: any,
-        protected state: any,
-        protected publishEntityState: any,
-        protected eventBus: any,
-        protected settings: any,
-        protected logger: any
+        protected zigbee: Zigbee,
+        protected mqtt: MQTT,
+        protected state: State,
+        protected publishEntityState: unknown,
+        protected eventBus: EventBus,
+        protected settings: typeof Settings,
+        protected logger: typeof Logger,
     ) {
         this.mqttBaseTopic = settings.get().mqtt.base_topic;
         this.automations = this.parseConfig(settings.get().automations || {});
@@ -93,7 +98,7 @@ class AutomationsExtension {
         const services = Object.values(ConfigService);
         const platforms = Object.values(ConfigPlatform);
 
-        return Object.entries(automations).reduce((result, [_, automation]) => {
+        return Object.values(automations).reduce((result, automation) => {
             const platform = automation.trigger.platform;
             if (!platforms.includes(platform)) {
                 return result;
@@ -113,18 +118,12 @@ class AutomationsExtension {
             const entities = toArray(automation.trigger.entity);
             for (const entityId of entities) {
                 if (!result[entityId]) {
-                    // @ts-ignore
-                    result[entityId] = {};
+                    result[entityId] = [];
                 }
 
-                if (!result[entityId][platform]) {
-                    result[entityId][platform] = [];
-                }
-
-
-                result[entityId][platform].push({
+                result[entityId].push({
                     trigger: automation.trigger,
-                    action: toArray(automation.action),
+                    action: actions,
                 });
             }
 
@@ -164,7 +163,9 @@ class AutomationsExtension {
         }
     }
 
-    runAutomationIfMatches(platform: ConfigPlatform, automation: Automation, update: Update, from: Update, to: Update): void {
+    runAutomationIfMatches(automation: Automation, update: Update, from: Update, to: Update): void {
+        const platform = automation.trigger.platform;
+
         if (platform === ConfigPlatform.ACTION) {
             if (!update.hasOwnProperty('action')) {
                 return;
@@ -238,10 +239,8 @@ class AutomationsExtension {
             return;
         }
 
-        for (const [platform, automationsList] of Object.entries(automations)) {
-            for (const automation of automationsList) {
-                this.runAutomationIfMatches(platform as ConfigPlatform, automation, update, from, to);
-            }
+        for (const automation of automations) {
+            this.runAutomationIfMatches(automation, update, from, to);
         }
     }
 
