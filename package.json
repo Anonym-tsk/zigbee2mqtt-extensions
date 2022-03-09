@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Zigbee2MQTT Extensions",
   "devDependencies": {
+    "@types/node": "^17.0.21",
     "typescript": "^4.5.5",
     "zigbee2mqtt": "^1.23.0"
   },

@@ -1,4 +1,5 @@
 const stringify = require("json-stable-stringify-without-jsonify");
+const crypto = require("crypto");
 function toArray(item) {
     return Array.isArray(item) ? item : [item];
 }
@@ -30,6 +31,7 @@ class AutomationsExtension {
         this.logger = logger;
         this.mqttBaseTopic = settings.get().mqtt.base_topic;
         this.automations = this.parseConfig(settings.get().automations || {});
+        this.timeouts = {};
         this.logger.info('AutomationsExtension loaded');
         this.logger.debug(`Registered automations: ${stringify(this.automations)}`);
     }
@@ -65,6 +67,7 @@ class AutomationsExtension {
                     result[entityId] = [];
                 }
                 result[entityId].push({
+                    id: crypto.randomUUID(),
                     trigger: automation.trigger,
                     action: actions,
                     condition: conditions,
@@ -72,6 +75,55 @@ class AutomationsExtension {
             }
             return result;
         }, {});
+    }
+    checkTrigger(configTrigger, update, from, to) {
+        let trigger;
+        switch (configTrigger.platform) {
+            case ConfigPlatform.ACTION:
+                if (!update.hasOwnProperty('action')) {
+                    return null;
+                }
+                trigger = configTrigger;
+                const actions = toArray(trigger.action);
+                return actions.includes(update.action);
+            case ConfigPlatform.STATE:
+                if (!update.hasOwnProperty('state') || !from.hasOwnProperty('state') || !to.hasOwnProperty('state')) {
+                    return null;
+                }
+                trigger = configTrigger;
+                const states = toArray(trigger.state);
+                if (from.state === to.state) {
+                    return null;
+                }
+                return states.includes(update.state);
+            case ConfigPlatform.NUMERIC_STATE:
+                trigger = configTrigger;
+                const attribute = trigger.attribute;
+                if (!update.hasOwnProperty(attribute) || !from.hasOwnProperty(attribute) || !to.hasOwnProperty(attribute)) {
+                    return null;
+                }
+                if (from[attribute] === to[attribute]) {
+                    return null;
+                }
+                if (typeof trigger.above !== 'undefined') {
+                    if (to[attribute] < trigger.above) {
+                        return false;
+                    }
+                    if (from[attribute] >= trigger.above) {
+                        return null;
+                    }
+                }
+                if (typeof trigger.below !== 'undefined') {
+                    if (to[attribute] > trigger.below) {
+                        return false;
+                    }
+                    if (from[attribute] <= trigger.below) {
+                        return null;
+                    }
+                }
+                return true;
+        }
+        return false;
     }
     checkCondition(condition) {
         const entity = this.zigbee.resolveEntity(condition.entity);
@@ -129,57 +181,43 @@ class AutomationsExtension {
             this.mqtt.onMessage(`${this.mqttBaseTopic}/${destination.name}/set`, stringify({ state: newState }));
         }
     }
+    stopTimeout(automationId) {
+        const timeout = this.timeouts[automationId];
+        if (timeout) {
+            clearTimeout(timeout);
+            delete this.timeouts[automationId];
+        }
+    }
+    startTimeout(automation, time) {
+        const timeout = setTimeout(() => {
+            delete this.timeouts[automation.id];
+            this.runActions(automation.action);
+        }, time * 1000);
+        timeout.unref();
+        this.timeouts[automation.id] = timeout;
+    }
     runAutomationIfMatches(automation, update, from, to) {
-        let trigger;
-        switch (automation.trigger.platform) {
-            case ConfigPlatform.ACTION:
-                if (!update.hasOwnProperty('action')) {
-                    return;
-                }
-                trigger = automation.trigger;
-                const actions = toArray(trigger.action);
-                if (!actions.includes(update.action)) {
-                    return;
-                }
-                break;
-            case ConfigPlatform.STATE:
-                if (!update.hasOwnProperty('state') || !from.hasOwnProperty('state') || !to.hasOwnProperty('state')) {
-                    return;
-                }
-                trigger = automation.trigger;
-                const states = toArray(trigger.state);
-                if (from.state === to.state) {
-                    return;
-                }
-                if (!states.includes(update.state)) {
-                    return;
-                }
-                break;
-            case ConfigPlatform.NUMERIC_STATE:
-                trigger = automation.trigger;
-                const attribute = trigger.attribute;
-                if (!update.hasOwnProperty(attribute) || !from.hasOwnProperty(attribute) || !to.hasOwnProperty(attribute)) {
-                    return;
-                }
-                if (from[attribute] === to[attribute]) {
-                    return;
-                }
-                if (typeof trigger.above !== 'undefined') {
-                    if (from[attribute] >= trigger.above || to[attribute] < trigger.above) {
-                        return;
-                    }
-                }
-                if (typeof trigger.below !== 'undefined') {
-                    if (from[attribute] <= trigger.below || to[attribute] > trigger.below) {
-                        return;
-                    }
-                }
-                break;
+        const triggerResult = this.checkTrigger(automation.trigger, update, from, to);
+        if (triggerResult === false) {
+            this.stopTimeout(automation.id);
+            return;
+        }
+        if (triggerResult === null) {
+            return;
         }
         for (const condition of automation.condition) {
             if (!this.checkCondition(condition)) {
+                this.stopTimeout(automation.id);
                 return;
             }
+        }
+        const timeout = this.timeouts[automation.id];
+        if (timeout) {
+            return;
+        }
+        if (automation.trigger.for) {
+            this.startTimeout(automation, automation.trigger.for);
+            return;
         }
         this.runActions(automation.action);
     }

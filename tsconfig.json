@@ -2,7 +2,7 @@
   "compilerOptions": {
     "target": "es2020",
     "module": "commonjs",
-    "lib": ["dom", "es2020"],
+    "lib": ["es2020"],
 
     "allowJs": false,
     "checkJs": false,
@@ -22,6 +22,7 @@
     "noImplicitThis": true,
     "alwaysStrict": false,
     "noImplicitUseStrict": true,
+    "types": ["node"],
 
     "noUnusedLocals": true,
     "noUnusedParameters": true,
