@@ -41,6 +41,7 @@ automations:
       attribute: temperatire
       above: 17
       below: 26
+      for: 3
     action:
       entity: Test Plug
       service: turn_on
@@ -96,6 +97,9 @@ automations:
 Triggers are what starts the processing of an automation rule.
 When any of the automation’s triggers becomes true (trigger fires), Z2M will validate the conditions, if any, and call the action.
 
+The `for:` can also be specified in triggers.
+If given, automation will be triggered when the condition has been true for X seconds.
+
 #### Action Trigger
 
 Fires when action of given entities changes.
@@ -121,11 +125,12 @@ trigger:
 
 Fires when state of given entities changes.
 
-| Item        | Type                   | Description                      |
-|-------------|------------------------|----------------------------------|
-| `platform`  | `string`               | `state`                          |
-| `entity`    | `string` or `string[]` | Name of entity (friendly name)   |
-| `state`     | `string` or `string[]` | `ON` or `OFF`                    |
+| Item       | Type                   | Description                    |
+|------------|------------------------|--------------------------------|
+| `platform` | `string`               | `state`                        |
+| `entity`   | `string` or `string[]` | Name of entity (friendly name) |
+| `state`    | `string` or `string[]` | `ON` or `OFF`                  |
+| `for`      | `number`               | Number of seconds              |
 
 _Example:_
 
@@ -136,6 +141,7 @@ trigger:
     - My Switch
     - My Light
   state: ON
+  for: 10
 ```
 
 #### Numeric State Trigger
@@ -149,6 +155,7 @@ Fires when numeric attribute of given entities changes. Parameters `above` or `b
 | `attribute` | `string`               | `temperatire`, `humidity`, `pressure` and others device-specific |
 | `above`     | `number`               | Triggers when value crosses a given threshold                    |
 | `below`     | `number`               | Triggers when value crosses a given threshold                    |
+| `for`       | `number`               | Number of seconds                                                |
 
 _Example:_
 
@@ -159,6 +166,7 @@ trigger:
   attribute: temperature
   above: 25
   below: 35
+  for: 180
 ```
 
 ### Conditions
