@@ -99,7 +99,7 @@ type Automations = {
 class AutomationsExtension {
     private readonly mqttBaseTopic: string;
     private readonly automations: Automations;
-    private timeouts: Record<UUID, NodeJS.Timeout>;
+    private readonly timeouts: Record<UUID, NodeJS.Timeout>;
 
     constructor(
         protected zigbee: Zigbee,
