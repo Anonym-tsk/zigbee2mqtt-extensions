@@ -160,6 +160,73 @@ class AutomationsExtension {
         }, {} as Automations);
     }
 
+    private checkTrigger(configTrigger: ConfigTrigger, update: Update, from: Update, to: Update): boolean {
+        let trigger;
+
+        switch (configTrigger.platform) {
+            case ConfigPlatform.ACTION:
+                if (!update.hasOwnProperty('action')) {
+                    return false;
+                }
+
+                trigger = configTrigger as ConfigActionTrigger;
+                const actions = toArray(trigger.action);
+
+                if (!actions.includes(update.action as ConfigActionType)) {
+                    return false;
+                }
+
+                break;
+
+            case ConfigPlatform.STATE:
+                if (!update.hasOwnProperty('state') || !from.hasOwnProperty('state') || !to.hasOwnProperty('state')) {
+                    return false;
+                }
+
+                trigger = configTrigger as ConfigStateTrigger;
+                const states = toArray(trigger.state);
+
+                if (from.state === to.state) {
+                    return false;
+                }
+
+                if (!states.includes(update.state as ConfigState)) {
+                    return false;
+                }
+
+                break;
+
+            case ConfigPlatform.NUMERIC_STATE:
+                trigger = configTrigger as ConfigNumericStateTrigger;
+                const attribute = trigger.attribute;
+
+                if (!update.hasOwnProperty(attribute) || !from.hasOwnProperty(attribute) || !to.hasOwnProperty(attribute)) {
+                    return false;
+                }
+
+                if (from[attribute] === to[attribute]) {
+                    return false;
+                }
+
+                if (typeof trigger.above !== 'undefined') {
+                    if (from[attribute] >= trigger.above || to[attribute] < trigger.above) {
+                        return false;
+                    }
+                }
+
+                if (typeof trigger.below !== 'undefined') {
+                    if (from[attribute] <= trigger.below || to[attribute] > trigger.below) {
+                        return false;
+                    }
+                }
+
+                break;
+        }
+
+        this.logger.debug(`Found automation trigger '${trigger.platform}'`);
+        return true;
+    }
+
     private checkCondition(condition: ConfigCondition): boolean {
         const entity = this.zigbee.resolveEntity(condition.entity);
         if (!entity) {
@@ -234,66 +301,8 @@ class AutomationsExtension {
     }
 
     private runAutomationIfMatches(automation: Automation, update: Update, from: Update, to: Update): void {
-        let trigger;
-
-        switch (automation.trigger.platform) {
-            case ConfigPlatform.ACTION:
-                if (!update.hasOwnProperty('action')) {
-                    return;
-                }
-
-                trigger = automation.trigger as ConfigActionTrigger;
-                const actions = toArray(trigger.action);
-
-                if (!actions.includes(update.action as ConfigActionType)) {
-                    return;
-                }
-
-                break;
-
-            case ConfigPlatform.STATE:
-                if (!update.hasOwnProperty('state') || !from.hasOwnProperty('state') || !to.hasOwnProperty('state')) {
-                    return;
-                }
-
-                trigger = automation.trigger as ConfigStateTrigger;
-                const states = toArray(trigger.state);
-
-                if (from.state === to.state) {
-                    return;
-                }
-
-                if (!states.includes(update.state as ConfigState)) {
-                    return;
-                }
-
-                break;
-
-            case ConfigPlatform.NUMERIC_STATE:
-                trigger = automation.trigger as ConfigNumericStateTrigger;
-                const attribute = trigger.attribute;
-
-                if (!update.hasOwnProperty(attribute) || !from.hasOwnProperty(attribute) || !to.hasOwnProperty(attribute)) {
-                    return;
-                }
-
-                if (from[attribute] === to[attribute]) {
-                    return;
-                }
-
-                if (typeof trigger.above !== 'undefined') {
-                    if (from[attribute] >= trigger.above || to[attribute] < trigger.above) {
-                        return;
-                    }
-                }
-
-                if (typeof trigger.below !== 'undefined') {
-                    if (from[attribute] <= trigger.below || to[attribute] > trigger.below) {
-                        return;
-                    }
-                }
-
-                break;
+        if (!this.checkTrigger(automation.trigger, update, from, to)) {
+            return;
         }
 
         for (const condition of automation.condition) {
