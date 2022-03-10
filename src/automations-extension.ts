@@ -99,10 +99,36 @@ type Automations = {
     [key: EntityId]: Automation[],
 };
 
+class InternalLogger {
+    constructor(private logger: typeof Logger) {}
+
+    private log(level: 'warning' | 'debug' | 'info' | 'error', ...args: unknown[]): void {
+        const data = args.map(stringify).join(' ');
+        this.logger[level](`[AutomationsExtension] ${data}`);
+    }
+
+    debug(...args: unknown[]): void {
+        this.log('debug', ...args);
+    }
+
+    warning(...args: unknown[]): void {
+        this.log('warning', ...args);
+    }
+
+    info(...args: unknown[]): void {
+        this.log('info', ...args);
+    }
+
+    error(...args: unknown[]): void {
+        this.log('error', ...args);
+    }
+}
+
 class AutomationsExtension {
     private readonly mqttBaseTopic: string;
     private readonly automations: Automations;
     private readonly timeouts: Record<UUID, NodeJS.Timeout>;
+    private readonly logger: InternalLogger;
 
     constructor(
         protected zigbee: Zigbee,
@@ -111,14 +137,15 @@ class AutomationsExtension {
         protected publishEntityState: unknown,
         protected eventBus: EventBus,
         protected settings: typeof Settings,
-        protected logger: typeof Logger,
+        baseLogger: typeof Logger,
     ) {
         this.mqttBaseTopic = settings.get().mqtt.base_topic;
         this.automations = this.parseConfig(settings.get().automations || {});
         this.timeouts = {};
+        this.logger = new InternalLogger(baseLogger);
 
-        this.logger.info('AutomationsExtension loaded');
-        this.logger.debug(`Registered automations: ${stringify(this.automations)}`);
+        this.logger.info('Plugin loaded');
+        this.logger.debug('Registered automations', this.automations);
     }
 
     private parseConfig(automations: ConfigAutomations): Automations {
@@ -314,7 +341,7 @@ class AutomationsExtension {
                 continue;
             }
 
-            this.logger.debug(`Run automation for entity '${action.entity}': ${stringify(action)}`);
+            this.logger.debug(`Run automation for entity '${action.entity}':`, action);
             this.mqtt.onMessage(`${this.mqttBaseTopic}/${destination.name}/set`, stringify({state: newState}));
         }
     }
@@ -328,6 +355,8 @@ class AutomationsExtension {
     }
 
     private startTimeout(automation: Automation, time: Second): void {
+        this.logger.debug('Start timeout for automation', automation.trigger);
+
         const timeout = setTimeout(() => {
             delete this.timeouts[automation.id];
             this.runActions(automation.action);
