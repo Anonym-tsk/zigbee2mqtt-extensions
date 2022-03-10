@@ -240,6 +240,7 @@ class AutomationsExtension {
         if (triggerResult === null) {
             return;
         }
+        this.logger.debug('Start automation', automation);
         const timeout = this.timeouts[automation.id];
         if (timeout) {
             return;
@@ -251,7 +252,6 @@ class AutomationsExtension {
         this.runActionsWithConditions(automation.condition, automation.action);
     }
     findAndRun(entityId, update, from, to) {
-        this.logger.debug(`Looking for automations for entity '${entityId}'`);
         const automations = this.automations[entityId];
         if (!automations) {
             return;
