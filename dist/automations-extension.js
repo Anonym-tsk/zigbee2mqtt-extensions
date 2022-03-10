@@ -25,7 +25,7 @@ class InternalLogger {
         this.logger = logger;
     }
     log(level, ...args) {
-        const data = args.map(stringify).join(' ');
+        const data = args.map((item) => typeof item === 'string' ? item : stringify(item)).join(' ');
         this.logger[level](`[AutomationsExtension] ${data}`);
     }
     debug(...args) {

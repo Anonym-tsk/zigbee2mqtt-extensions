@@ -103,7 +103,7 @@ class InternalLogger {
     constructor(private logger: typeof Logger) {}
 
     private log(level: 'warning' | 'debug' | 'info' | 'error', ...args: unknown[]): void {
-        const data = args.map(stringify).join(' ');
+        const data = args.map((item) => typeof item === 'string' ? item : stringify(item)).join(' ');
         this.logger[level](`[AutomationsExtension] ${data}`);
     }
 
