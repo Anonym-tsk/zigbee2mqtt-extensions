@@ -14,11 +14,11 @@ _Example (add this into your z2m configuration.yaml):_
 automations:
   automation_by_action:
     trigger:
-      platorm: action
+      platform: action
       entity: Test Switch
       action: single
     condition:
-      platorm: state
+      platform: state
       entity: Test Switch 2
       state: ON
     action:
@@ -53,7 +53,7 @@ _More complex example:_
 automations:
   automation_by_action:
     trigger:
-      platorm: action
+      platform: action
       entity:
       - Test Switch
       - Test Button
@@ -62,10 +62,10 @@ automations:
       - double
       - hold
     condition:
-      - platorm: state
+      - platform: state
         entity: Test Switch 2
         state: ON
-      - platorm: numeric_state
+      - platform: numeric_state
         entity: My Sensor
         attribute: temperature
         above: 25
@@ -114,7 +114,7 @@ _Example:_
 
 ```yaml
 trigger:
-  platorm: action
+  platform: action
   entity: My Switch
   action:
     - single
@@ -137,7 +137,7 @@ _Examples:_
 
 ```yaml
 trigger:
-  platorm: state
+  platform: state
   entity:
     - My Switch
     - My Light
@@ -147,7 +147,7 @@ trigger:
 
 ```yaml
 trigger:
-  platorm: state
+  platform: state
   entity: Motion Sensor
   attribute: occupancy
   state: true
@@ -171,7 +171,7 @@ _Example:_
 
 ```yaml
 trigger:
-  platorm: numeric_state
+  platform: numeric_state
   entity: My Sensor
   attribute: temperature
   above: 25
@@ -204,14 +204,14 @@ _Examples:_
 
 ```yaml
 condition:
-  platorm: state
+  platform: state
   entity: My Switch
   state: ON
 ```
 
 ```yaml
 condition:
-  platorm: state
+  platform: state
   entity: Motion Sensor
   attribute: occupancy
   state: false
@@ -236,7 +236,7 @@ _Example:_
 
 ```yaml
 condition:
-  platorm: numeric_state
+  platform: numeric_state
   entity: My Sensor
   attribute: temperature
   above: 25
