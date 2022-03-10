@@ -125,13 +125,13 @@ trigger:
 
 Fires when state of given entities changes.
 
-| Item        | Type                          | Description                    |
-|-------------|-------------------------------|--------------------------------|
-| `platform`  | `string`                      | `state`                        |
-| `entity`    | `string` or `string[]`        | Name of entity (friendly name) |
-| `state`     | `string` or `string[]`        | `ON` or `OFF`                  |
-| `attribute` | `string`, `number`, `boolean` | Optional, default `state`      |
-| `for`       | `number`                      | Number of seconds              |
+| Item        | Type                                                               | Description                                                                                  |
+|-------------|--------------------------------------------------------------------|----------------------------------------------------------------------------------------------|
+| `platform`  | `string`                                                           | `state`                                                                                      |
+| `entity`    | `string` or `string[]`                                             | Name of entity (friendly name)                                                               |
+| `state`     | `string`, `string[]`, `number`, `number[]`, `boolean`, `boolean[]` | Depends on `attribute`. `ON`/`OFF` for `state`, `true`/`false` for `occupancy`               |
+| `attribute` | `string`                                                           | Optional (default `state`). `temperatire`, `humidity`, `pressure` and others device-specific |
+| `for`       | `number`                                                           | Number of seconds                                                                            |
 
 _Examples:_
 
@@ -193,12 +193,12 @@ _Automation can have multiple conditions_
 
 Tests if an entity is a specified state.
 
-| Item        | Type                          | Description                    |
-|-------------|-------------------------------|--------------------------------|
-| `platform`  | `string`                      | `state`                        |
-| `entity`    | `string`                      | Name of entity (friendly name) |
-| `state`     | `string`                      | `ON` or `OFF`                  |
-| `attribute` | `string`, `number`, `boolean` | Optional, default `state`      |
+| Item        | Type                           | Description                                                                                  |
+|-------------|--------------------------------|----------------------------------------------------------------------------------------------|
+| `platform`  | `string`                       | `state`                                                                                      |
+| `entity`    | `string`                       | Name of entity (friendly name)                                                               |
+| `state`     | `string`, `number`, `boolean`  | Depends on `attribute`. `ON`/`OFF` for `state`, `true`/`false` for `occupancy`               |
+| `attribute` | `string`                       | Optional (default `state`). `temperatire`, `humidity`, `pressure` and others device-specific |
 
 _Examples:_
 
