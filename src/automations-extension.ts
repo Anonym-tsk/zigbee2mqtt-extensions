@@ -139,10 +139,10 @@ class AutomationsExtension {
         protected settings: typeof Settings,
         baseLogger: typeof Logger,
     ) {
+        this.logger = new InternalLogger(baseLogger);
         this.mqttBaseTopic = settings.get().mqtt.base_topic;
         this.automations = this.parseConfig(settings.get().automations || {});
         this.timeouts = {};
-        this.logger = new InternalLogger(baseLogger);
 
         this.logger.info('Plugin loaded');
         this.logger.debug('Registered automations', this.automations);
@@ -155,16 +155,19 @@ class AutomationsExtension {
         return Object.values(automations).reduce((result, automation) => {
             const platform = automation.trigger.platform;
             if (!platforms.includes(platform)) {
+                this.logger.warning(`Config validation error: unknown trigger platform '${platform}'`);
                 return result;
             }
 
             if (!automation.trigger.entity) {
+                this.logger.warning('Config validation error: trigger entity not specified');
                 return result;
             }
 
             const actions = toArray(automation.action);
             for (const action of actions) {
                 if (!services.includes(action.service)) {
+                    this.logger.warning(`Config validation error: unknown service '${action.service}'`);
                     return result;
                 }
             }
@@ -172,10 +175,12 @@ class AutomationsExtension {
             const conditions = automation.condition ? toArray(automation.condition) : [];
             for (const condition of conditions) {
                 if (!condition.entity) {
+                    this.logger.warning('Config validation error: condition entity not specified');
                     return result;
                 }
 
                 if (!platforms.includes(condition.platform)) {
+                    this.logger.warning(`Config validation error: unknown condition platform '${condition.platform}'`);
                     return result;
                 }
             }
