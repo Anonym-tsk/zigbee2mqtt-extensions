@@ -9,11 +9,11 @@ var ConfigPlatform;
     ConfigPlatform["STATE"] = "state";
     ConfigPlatform["NUMERIC_STATE"] = "numeric_state";
 })(ConfigPlatform || (ConfigPlatform = {}));
-var ConfigState;
-(function (ConfigState) {
-    ConfigState["ON"] = "ON";
-    ConfigState["OFF"] = "OFF";
-})(ConfigState || (ConfigState = {}));
+var StateOnOff;
+(function (StateOnOff) {
+    StateOnOff["ON"] = "ON";
+    StateOnOff["OFF"] = "OFF";
+})(StateOnOff || (StateOnOff = {}));
 var ConfigService;
 (function (ConfigService) {
     ConfigService["TOGGLE"] = "toggle";
@@ -78,6 +78,7 @@ class AutomationsExtension {
     }
     checkTrigger(configTrigger, update, from, to) {
         let trigger;
+        let attribute;
         switch (configTrigger.platform) {
             case ConfigPlatform.ACTION:
                 if (!update.hasOwnProperty('action')) {
@@ -87,18 +88,19 @@ class AutomationsExtension {
                 const actions = toArray(trigger.action);
                 return actions.includes(update.action);
             case ConfigPlatform.STATE:
-                if (!update.hasOwnProperty('state') || !from.hasOwnProperty('state') || !to.hasOwnProperty('state')) {
-                    return null;
-                }
                 trigger = configTrigger;
-                const states = toArray(trigger.state);
-                if (from.state === to.state) {
+                attribute = trigger.attribute || 'state';
+                if (!update.hasOwnProperty(attribute) || !from.hasOwnProperty(attribute) || !to.hasOwnProperty(attribute)) {
                     return null;
                 }
-                return states.includes(update.state);
+                if (from[attribute] === to[attribute]) {
+                    return null;
+                }
+                const states = toArray(trigger.state);
+                return states.includes(update[attribute]);
             case ConfigPlatform.NUMERIC_STATE:
                 trigger = configTrigger;
-                const attribute = trigger.attribute;
+                attribute = trigger.attribute;
                 if (!update.hasOwnProperty(attribute) || !from.hasOwnProperty(attribute) || !to.hasOwnProperty(attribute)) {
                     return null;
                 }
@@ -133,17 +135,20 @@ class AutomationsExtension {
         }
         let currentCondition;
         let currentState;
+        let attribute;
         switch (condition.platform) {
             case ConfigPlatform.STATE:
                 currentCondition = condition;
-                currentState = this.state.get(entity).state;
+                attribute = currentCondition.attribute || 'state';
+                currentState = this.state.get(entity)[attribute];
                 if (currentState !== currentCondition.state) {
                     return false;
                 }
                 break;
             case ConfigPlatform.NUMERIC_STATE:
                 currentCondition = condition;
-                currentState = this.state.get(entity)[currentCondition.attribute];
+                attribute = currentCondition.attribute;
+                currentState = this.state.get(entity)[attribute];
                 if (typeof currentCondition.above !== 'undefined' && currentState < currentCondition.above) {
                     return false;
                 }
@@ -165,13 +170,13 @@ class AutomationsExtension {
             let newState;
             switch (action.service) {
                 case ConfigService.TURN_ON:
-                    newState = ConfigState.ON;
+                    newState = StateOnOff.ON;
                     break;
                 case ConfigService.TURN_OFF:
-                    newState = ConfigState.OFF;
+                    newState = StateOnOff.OFF;
                     break;
                 case ConfigService.TOGGLE:
-                    newState = currentState === ConfigState.ON ? ConfigState.OFF : ConfigState.ON;
+                    newState = currentState === StateOnOff.ON ? StateOnOff.OFF : StateOnOff.ON;
                     break;
             }
             if (currentState === newState) {

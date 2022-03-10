@@ -125,14 +125,15 @@ trigger:
 
 Fires when state of given entities changes.
 
-| Item       | Type                   | Description                    |
-|------------|------------------------|--------------------------------|
-| `platform` | `string`               | `state`                        |
-| `entity`   | `string` or `string[]` | Name of entity (friendly name) |
-| `state`    | `string` or `string[]` | `ON` or `OFF`                  |
-| `for`      | `number`               | Number of seconds              |
+| Item        | Type                          | Description                    |
+|-------------|-------------------------------|--------------------------------|
+| `platform`  | `string`                      | `state`                        |
+| `entity`    | `string` or `string[]`        | Name of entity (friendly name) |
+| `state`     | `string` or `string[]`        | `ON` or `OFF`                  |
+| `attribute` | `string`, `number`, `boolean` | Optional, default `state`      |
+| `for`       | `number`                      | Number of seconds              |
 
-_Example:_
+_Examples:_
 
 ```yaml
 trigger:
@@ -143,6 +144,15 @@ trigger:
   state: ON
   for: 10
 ```
+
+```yaml
+trigger:
+  platorm: state
+  entity: Motion Sensor
+  attribute: occupancy
+  state: true
+```
+
 
 #### Numeric State Trigger
 
@@ -183,13 +193,14 @@ _Automation can have multiple conditions_
 
 Tests if an entity is a specified state.
 
-| Item        | Type     | Description                    |
-|-------------|----------|--------------------------------|
-| `platform`  | `string` | `state`                        |
-| `entity`    | `string` | Name of entity (friendly name) |
-| `state`     | `string` | `ON` or `OFF`                  |
+| Item        | Type                          | Description                    |
+|-------------|-------------------------------|--------------------------------|
+| `platform`  | `string`                      | `state`                        |
+| `entity`    | `string`                      | Name of entity (friendly name) |
+| `state`     | `string`                      | `ON` or `OFF`                  |
+| `attribute` | `string`, `number`, `boolean` | Optional, default `state`      |
 
-_Example:_
+_Examples:_
 
 ```yaml
 condition:
@@ -197,6 +208,15 @@ condition:
   entity: My Switch
   state: ON
 ```
+
+```yaml
+condition:
+  platorm: state
+  entity: Motion Sensor
+  attribute: occupancy
+  state: false
+```
+
 
 #### Numeric State Condition
 

@@ -19,7 +19,7 @@ enum ConfigPlatform {
     NUMERIC_STATE = 'numeric_state',
 }
 
-enum ConfigState {
+enum StateOnOff {
     ON = 'ON',
     OFF = 'OFF',
 }
@@ -30,10 +30,11 @@ enum ConfigService {
     TURN_OFF = 'turn_off',
 }
 
+type ConfigStateType = string | number | boolean;
 type EntityId = string;
 type ConfigActionType = string;
 type ConfigAttribute = string;
-type Update = Record<string, string | number>;
+type Update = Record<string, ConfigStateType>;
 type Second = number;
 type UUID = string;
 
@@ -48,7 +49,8 @@ interface ConfigActionTrigger extends ConfigTrigger {
 }
 
 interface ConfigStateTrigger extends ConfigTrigger {
-    state: ConfigState | ConfigState[];
+    attribute?: ConfigAttribute;
+    state: ConfigStateType | ConfigStateType[];
 }
 
 interface ConfigNumericStateTrigger extends ConfigTrigger {
@@ -68,7 +70,8 @@ interface ConfigCondition {
 }
 
 interface ConfigStateCondition extends ConfigCondition {
-    state: ConfigState;
+    attribute?: ConfigAttribute;
+    state: ConfigStateType;
 }
 
 interface ConfigNumericStateCondition extends ConfigCondition {
@@ -176,6 +179,7 @@ class AutomationsExtension {
      */
     private checkTrigger(configTrigger: ConfigTrigger, update: Update, from: Update, to: Update): boolean | null {
         let trigger;
+        let attribute;
 
         switch (configTrigger.platform) {
             case ConfigPlatform.ACTION:
@@ -189,22 +193,23 @@ class AutomationsExtension {
                 return actions.includes(update.action as ConfigActionType);
 
             case ConfigPlatform.STATE:
-                if (!update.hasOwnProperty('state') || !from.hasOwnProperty('state') || !to.hasOwnProperty('state')) {
-                    return null;
-                }
-
                 trigger = configTrigger as ConfigStateTrigger;
-                const states = toArray(trigger.state);
+                attribute = trigger.attribute || 'state';
 
-                if (from.state === to.state) {
+                if (!update.hasOwnProperty(attribute) || !from.hasOwnProperty(attribute) || !to.hasOwnProperty(attribute)) {
                     return null;
                 }
 
-                return states.includes(update.state as ConfigState);
+                if (from[attribute] === to[attribute]) {
+                    return null;
+                }
+
+                const states = toArray(trigger.state);
+                return states.includes(update[attribute] as ConfigStateType);
 
             case ConfigPlatform.NUMERIC_STATE:
                 trigger = configTrigger as ConfigNumericStateTrigger;
-                const attribute = trigger.attribute;
+                attribute = trigger.attribute;
 
                 if (!update.hasOwnProperty(attribute) || !from.hasOwnProperty(attribute) || !to.hasOwnProperty(attribute)) {
                     return null;
@@ -247,11 +252,13 @@ class AutomationsExtension {
 
         let currentCondition;
         let currentState;
+        let attribute;
 
         switch (condition.platform) {
             case ConfigPlatform.STATE:
                 currentCondition = condition as ConfigStateCondition;
-                currentState = this.state.get(entity).state;
+                attribute = currentCondition.attribute || 'state';
+                currentState = this.state.get(entity)[attribute];
 
                 if (currentState !== currentCondition.state) {
                     return false;
@@ -261,7 +268,8 @@ class AutomationsExtension {
 
             case ConfigPlatform.NUMERIC_STATE:
                 currentCondition = condition as ConfigNumericStateCondition;
-                currentState = this.state.get(entity)[currentCondition.attribute];
+                attribute = currentCondition.attribute;
+                currentState = this.state.get(entity)[attribute];
 
                 if (typeof currentCondition.above !== 'undefined' && currentState < currentCondition.above) {
                     return false;
@@ -290,15 +298,15 @@ class AutomationsExtension {
 
             switch (action.service) {
                 case ConfigService.TURN_ON:
-                    newState = ConfigState.ON;
+                    newState = StateOnOff.ON;
                     break;
 
                 case ConfigService.TURN_OFF:
-                    newState = ConfigState.OFF;
+                    newState = StateOnOff.OFF;
                     break;
 
                 case ConfigService.TOGGLE:
-                    newState = currentState === ConfigState.ON ? ConfigState.OFF : ConfigState.ON;
+                    newState = currentState === StateOnOff.ON ? StateOnOff.OFF : StateOnOff.ON;
                     break;
             }
 
