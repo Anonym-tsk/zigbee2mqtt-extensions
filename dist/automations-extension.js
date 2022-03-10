@@ -207,6 +207,14 @@ class AutomationsExtension {
             this.mqtt.onMessage(`${this.mqttBaseTopic}/${destination.name}/set`, stringify({ state: newState }));
         }
     }
+    runActionsWithConditions(conditions, actions) {
+        for (const condition of conditions) {
+            if (!this.checkCondition(condition)) {
+                return;
+            }
+        }
+        this.runActions(actions);
+    }
     stopTimeout(automationId) {
         const timeout = this.timeouts[automationId];
         if (timeout) {
@@ -218,7 +226,7 @@ class AutomationsExtension {
         this.logger.debug('Start timeout for automation', automation.trigger);
         const timeout = setTimeout(() => {
             delete this.timeouts[automation.id];
-            this.runActions(automation.action);
+            this.runActionsWithConditions(automation.condition, automation.action);
         }, time * 1000);
         timeout.unref();
         this.timeouts[automation.id] = timeout;
@@ -232,12 +240,6 @@ class AutomationsExtension {
         if (triggerResult === null) {
             return;
         }
-        for (const condition of automation.condition) {
-            if (!this.checkCondition(condition)) {
-                this.stopTimeout(automation.id);
-                return;
-            }
-        }
         const timeout = this.timeouts[automation.id];
         if (timeout) {
             return;
@@ -246,7 +248,7 @@ class AutomationsExtension {
             this.startTimeout(automation, automation.trigger.for);
             return;
         }
-        this.runActions(automation.action);
+        this.runActionsWithConditions(automation.condition, automation.action);
     }
     findAndRun(entityId, update, from, to) {
         this.logger.debug(`Looking for automations for entity '${entityId}'`);

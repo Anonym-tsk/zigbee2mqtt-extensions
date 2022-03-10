@@ -346,6 +346,16 @@ class AutomationsExtension {
         }
     }
 
+    private runActionsWithConditions(conditions: ConfigCondition[], actions: ConfigAction[]): void {
+        for (const condition of conditions) {
+            if (!this.checkCondition(condition)) {
+                return;
+            }
+        }
+
+        this.runActions(actions);
+    }
+
     private stopTimeout(automationId: UUID): void {
         const timeout = this.timeouts[automationId];
         if (timeout) {
@@ -359,7 +369,7 @@ class AutomationsExtension {
 
         const timeout = setTimeout(() => {
             delete this.timeouts[automation.id];
-            this.runActions(automation.action);
+            this.runActionsWithConditions(automation.condition, automation.action);
         }, time * 1000);
         timeout.unref();
 
@@ -376,13 +386,6 @@ class AutomationsExtension {
             return;
         }
 
-        for (const condition of automation.condition) {
-            if (!this.checkCondition(condition)) {
-                this.stopTimeout(automation.id);
-                return;
-            }
-        }
-
         const timeout = this.timeouts[automation.id];
         if (timeout) {
             return;
@@ -393,7 +396,7 @@ class AutomationsExtension {
             return;
         }
 
-        this.runActions(automation.action);
+        this.runActionsWithConditions(automation.condition, automation.action);
     }
 
     private findAndRun(entityId: EntityId, update: Update, from: Update, to: Update): void {
