@@ -28,6 +28,7 @@ enum ConfigService {
     TOGGLE = 'toggle',
     TURN_ON = 'turn_on',
     TURN_OFF = 'turn_off',
+    CUSTOM = 'custom',
 }
 
 type ConfigStateType = string | number | boolean;
@@ -59,9 +60,12 @@ interface ConfigNumericStateTrigger extends ConfigTrigger {
     below?: number;
 }
 
+type ConfigActionData = Record<ConfigAttribute, ConfigStateType>;
+
 interface ConfigAction {
     entity: EntityId;
     service: ConfigService;
+    data?: ConfigActionData;
 }
 
 interface ConfigCondition {
@@ -342,12 +346,17 @@ class AutomationsExtension {
                     break;
             }
 
-            if (currentState === newState) {
+            let data: ConfigActionData;
+            if (action.service === ConfigService.CUSTOM) {
+                data = action.data as ConfigActionData;
+            } else if (currentState === newState) {
                 continue;
+            } else {
+                data = {state: newState};
             }
 
             this.logger.debug(`Run automation for entity '${action.entity}':`, action);
-            this.mqtt.onMessage(`${this.mqttBaseTopic}/${destination.name}/set`, stringify({state: newState}));
+            this.mqtt.onMessage(`${this.mqttBaseTopic}/${destination.name}/set`, stringify(data));
         }
     }
 

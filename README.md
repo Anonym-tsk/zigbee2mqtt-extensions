@@ -249,10 +249,11 @@ The action of an automation rule is what is being executed when a rule fires.
 
 _Automation can have multiple actions_
 
-| Item      | Type     | Description                       |
-|-----------|----------|-----------------------------------|
-| `entity`  | `string` | Name of entity (friendly name)    |
-| `service` | `string` | `turn_on`, `turn_off` or `toggle` |
+| Item      | Type               | Description                                 |
+|-----------|--------------------|---------------------------------------------|
+| `entity`  | `string`           | Name of entity (friendly name)              |
+| `service` | `string`           | `turn_on`, `turn_off`, `toggle` or `custom` |
+| `data`    | `{string: string}` | Only for `service: custom`, see below       |
 
 _Example:_
 
@@ -262,4 +263,25 @@ action:
     service: toggle
   - entity: Test Switch
     service: turn_on
+```
+
+#### Custom action
+
+You can call any service. Data will be transferred directly to Z2M.
+For example change brightness or turn on a relay with a custom name.
+
+_Example:_
+
+```yaml
+action:
+  - entity: Plug With Two Relays
+    service: custom
+    data:
+      state_l2: ON
+  - entity: Light Strip
+    service: custom
+    data:
+      state: ON
+      brightness: 127
+      transition: 2
 ```

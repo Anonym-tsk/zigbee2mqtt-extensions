@@ -19,6 +19,7 @@ var ConfigService;
     ConfigService["TOGGLE"] = "toggle";
     ConfigService["TURN_ON"] = "turn_on";
     ConfigService["TURN_OFF"] = "turn_off";
+    ConfigService["CUSTOM"] = "custom";
 })(ConfigService || (ConfigService = {}));
 class InternalLogger {
     constructor(logger) {
@@ -205,11 +206,18 @@ class AutomationsExtension {
                     newState = currentState === StateOnOff.ON ? StateOnOff.OFF : StateOnOff.ON;
                     break;
             }
-            if (currentState === newState) {
+            let data;
+            if (action.service === ConfigService.CUSTOM) {
+                data = action.data;
+            }
+            else if (currentState === newState) {
                 continue;
             }
+            else {
+                data = { state: newState };
+            }
             this.logger.debug(`Run automation for entity '${action.entity}':`, action);
-            this.mqtt.onMessage(`${this.mqttBaseTopic}/${destination.name}/set`, stringify({ state: newState }));
+            this.mqtt.onMessage(`${this.mqttBaseTopic}/${destination.name}/set`, stringify(data));
         }
     }
     runActionsWithConditions(conditions, actions) {
