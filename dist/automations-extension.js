@@ -1,5 +1,7 @@
 const stringify = require("json-stable-stringify-without-jsonify");
 const crypto = require("crypto");
+const yaml_1 = require("../util/yaml");
+const data_1 = require("../util/data");
 function toArray(item) {
     return Array.isArray(item) ? item : [item];
 }
@@ -58,6 +60,9 @@ class AutomationsExtension {
         this.logger.debug('Registered automations', this.automations);
     }
     parseConfig(automations) {
+        if (typeof automations === 'string') {
+            automations = (yaml_1.default.readIfExists(data_1.default.joinPath(automations)) || {});
+        }
         const services = Object.values(ConfigService);
         const platforms = Object.values(ConfigPlatform);
         return Object.values(automations).reduce((result, automation) => {

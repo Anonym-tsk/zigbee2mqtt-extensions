@@ -1,6 +1,10 @@
 // @ts-ignore
 import * as stringify from 'json-stable-stringify-without-jsonify';
 import * as crypto from 'crypto';
+// @ts-ignore
+import yaml from '../util/yaml';
+// @ts-ignore
+import data from '../util/data';
 
 import type Zigbee from 'zigbee2mqtt/dist/zigbee';
 import type MQTT from 'zigbee2mqtt/dist/mqtt';
@@ -152,7 +156,11 @@ class AutomationsExtension {
         this.logger.debug('Registered automations', this.automations);
     }
 
-    private parseConfig(automations: ConfigAutomations): Automations {
+    private parseConfig(automations: ConfigAutomations | string): Automations {
+        if (typeof automations === 'string') {
+            automations = (yaml.readIfExists(data.joinPath(automations)) || {}) as ConfigAutomations;
+        }
+
         const services = Object.values(ConfigService);
         const platforms = Object.values(ConfigPlatform);
 

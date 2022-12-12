@@ -100,34 +100,34 @@ automations:
       service: turn_off
 ```
 
-### Triggers
+#### Split configuration
 
-Triggers are what starts the processing of an automation rule.
-When any of the automation’s triggers becomes true (trigger fires), Z2M will validate the conditions, if any, and call the action.
-
-The `for:` can also be specified in triggers.
-If given, automation will be triggered when the condition has been true for X seconds.
-
-#### Action Trigger
-
-Fires when action of given entities changes.
-
-| Item        | Type                   | Description                                                                  |
-|-------------|------------------------|------------------------------------------------------------------------------|
-| `platform`  | `string`               | `action`                                                                     |
-| `entity`    | `string` or `string[]` | Name of entity (friendly name)                                               |
-| `action`    | `string` or `string[]` | `single`, `double`, `single_left`, `single_right` and others device-specific |
-
-_Example:_
+You can move automations to a separate file.
+Create file named `automations.yaml` and write all your automations there:
 
 ```yaml
-trigger:
-  platform: action
-  entity: My Switch
-  action:
-    - single
-    - double
+# configuration.yaml
+
+automations: automations.yaml
 ```
+
+```yaml
+# automations.yaml
+
+automation_by_action:
+  trigger:
+    platform: action
+    entity: Test Switch
+    action: single
+  condition:
+    platform: state
+    entity: Test Switch 2
+    state: ON
+  action:
+    entity: Test Plug
+    service: toggle
+```
+
 
 #### State Trigger
 
