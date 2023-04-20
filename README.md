@@ -251,6 +251,37 @@ condition:
   below: 35
 ```
 
+
+#### Time Condition
+
+The time condition can test if it is after a specified time, before a specified time or if it is a certain day of the week.
+
+| Item        | Type       | Description                                                              |
+|-------------|------------|--------------------------------------------------------------------------|
+| `platform`  | `string`   | `time`                                                                   |
+| `after`     | `string`   | Optional (time in `hh:mm:ss` format)                                     |
+| `before`    | `string`   | Optional (time in `hh:mm:ss` format)                                     |
+| `weekday`   | `string[]` | Optional (valid values: `mon`, `tue`, `wed`, `thu`, `fri`, `sat`, `sun`) |
+
+Note that if only `before` key is used, the condition will be `true` _from midnight_ until the specified time.
+If only `after` key is used, the condition will be `true` from the specified time _until midnight_.
+
+Time condition windows can span across the midnight threshold if both `after` and `before` keys are used.
+In the example below, the condition window is from 3pm to 2am.
+
+_Example:_
+
+```yaml
+condition:
+  platform: time
+  after: '03:00:00'
+  before: '02:00:00'
+  weekday:
+    - mon
+    - wed
+    - fri
+```
+
 ### Actions
 
 The action of an automation rule is what is being executed when a rule fires.

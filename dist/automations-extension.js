@@ -10,6 +10,7 @@ var ConfigPlatform;
     ConfigPlatform["ACTION"] = "action";
     ConfigPlatform["STATE"] = "state";
     ConfigPlatform["NUMERIC_STATE"] = "numeric_state";
+    ConfigPlatform["TIME"] = "time";
 })(ConfigPlatform || (ConfigPlatform = {}));
 var StateOnOff;
 (function (StateOnOff) {
@@ -23,6 +24,64 @@ var ConfigService;
     ConfigService["TURN_OFF"] = "turn_off";
     ConfigService["CUSTOM"] = "custom";
 })(ConfigService || (ConfigService = {}));
+const WEEK = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+const TIME_STRING_REGEXP = /^[0-9]{2}:[0-9]{2}:[0-9]{2}$/;
+class Time {
+    constructor(time) {
+        if (!time) {
+            const now = new Date();
+            this.h = now.getHours();
+            this.m = now.getMinutes();
+            this.s = now.getSeconds();
+        }
+        else if (!TIME_STRING_REGEXP.test(time)) {
+            throw new Error(`Wrong time string: ${time}`);
+        }
+        else {
+            [this.h, this.m, this.s] = time.split(':').map(Number);
+        }
+    }
+    isEqual(time) {
+        return this.h === time.h
+            && this.m === time.m
+            && this.s === time.s;
+    }
+    isGreater(time) {
+        if (this.h > time.h) {
+            return true;
+        }
+        if (this.h < time.h) {
+            return false;
+        }
+        if (this.m > time.m) {
+            return true;
+        }
+        if (this.m < time.m) {
+            return false;
+        }
+        return this.s > time.s;
+    }
+    isLess(time) {
+        return !this.isGreater(time) && !this.isEqual(time);
+    }
+    isInRange(after, before) {
+        if (before.isEqual(after)) {
+            return false;
+        }
+        if (this.isEqual(before) || this.isEqual(after)) {
+            return true;
+        }
+        let inverse = false;
+        if (after.isGreater(before)) {
+            const tmp = after;
+            after = before;
+            before = tmp;
+            inverse = true;
+        }
+        const result = this.isGreater(after) && this.isLess(before);
+        return inverse ? !result : result;
+    }
+}
 class InternalLogger {
     constructor(logger) {
         this.logger = logger;
@@ -84,10 +143,6 @@ class AutomationsExtension {
             }
             const conditions = automation.condition ? toArray(automation.condition) : [];
             for (const condition of conditions) {
-                if (!condition.entity) {
-                    this.logger.warning('Config validation error: condition entity not specified');
-                    return result;
-                }
                 if (!platforms.includes(condition.platform)) {
                     this.logger.warning(`Config validation error: unknown condition platform '${condition.platform}'`);
                     return result;
@@ -160,9 +215,36 @@ class AutomationsExtension {
         return false;
     }
     checkCondition(condition) {
+        if (condition.platform === ConfigPlatform.TIME) {
+            return this.checkTimeCondition(condition);
+        }
+        return this.checkEntityCondition(condition);
+    }
+    checkTimeCondition(condition) {
+        const beforeStr = condition.before || '23:59:59';
+        const afterStr = condition.after || '00:00:00';
+        const weekday = condition.weekday || WEEK;
+        try {
+            const after = new Time(afterStr);
+            const before = new Time(beforeStr);
+            const current = new Time();
+            const now = new Date();
+            const day = now.getDay();
+            return current.isInRange(after, before) && weekday.includes(WEEK[day]);
+        }
+        catch (e) {
+            this.logger.warning(e);
+            return true;
+        }
+    }
+    checkEntityCondition(condition) {
+        if (!condition.entity) {
+            this.logger.warning('Config validation error: condition entity not specified');
+            return true;
+        }
         const entity = this.zigbee.resolveEntity(condition.entity);
         if (!entity) {
-            this.logger.debug(`Condition not found for entity '${condition.entity}'`);
+            this.logger.warning(`Condition not found for entity '${condition.entity}'`);
             return true;
         }
         let currentCondition;

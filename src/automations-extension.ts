@@ -21,6 +21,7 @@ enum ConfigPlatform {
     ACTION = 'action',
     STATE = 'state',
     NUMERIC_STATE = 'numeric_state',
+    TIME = 'time',
 }
 
 enum StateOnOff {
@@ -35,6 +36,9 @@ enum ConfigService {
     CUSTOM = 'custom',
 }
 
+const WEEK = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+const TIME_STRING_REGEXP = /^[0-9]{2}:[0-9]{2}:[0-9]{2}$/;
+
 type ConfigStateType = string | number | boolean;
 type EntityId = string;
 type ConfigActionType = string;
@@ -42,6 +46,75 @@ type ConfigAttribute = string;
 type Update = Record<string, ConfigStateType>;
 type Second = number;
 type UUID = string;
+type TimeString = string; // e.g. "15:05:00"
+
+class Time {
+    private readonly h: number;
+    private readonly m: number;
+    private readonly s: number;
+
+    constructor(time?: TimeString) {
+        if (!time) {
+            const now = new Date();
+            this.h = now.getHours();
+            this.m = now.getMinutes();
+            this.s = now.getSeconds();
+        } else if (!TIME_STRING_REGEXP.test(time)) {
+            throw new Error(`Wrong time string: ${time}`);
+        } else {
+            [this.h, this.m, this.s] = time.split(':').map(Number);
+        }
+    }
+
+    isEqual(time: Time): boolean {
+        return this.h === time.h
+            && this.m === time.m
+            && this.s === time.s;
+    }
+
+    isGreater(time: Time): boolean {
+        if (this.h > time.h) {
+            return true;
+        }
+        if (this.h < time.h) {
+            return false;
+        }
+        if (this.m > time.m) {
+            return true;
+        }
+        if (this.m < time.m) {
+            return false;
+        }
+        return this.s > time.s;
+    }
+
+    isLess(time: Time) {
+        return !this.isGreater(time) && !this.isEqual(time);
+    }
+
+    isInRange(after: Time, before: Time): boolean {
+        if (before.isEqual(after)) {
+            return false;
+        }
+
+        // Граничные значения считаем всегда подходящими
+        if (this.isEqual(before) || this.isEqual(after)) {
+            return true;
+        }
+
+        let inverse = false;
+        // Если интервал переходит через 00:00, инвертируем его
+        if (after.isGreater(before)) {
+            const tmp = after;
+            after = before;
+            before = tmp;
+            inverse = true;
+        }
+
+        const result = this.isGreater(after) && this.isLess(before);
+        return inverse ? !result : result;
+    }
+}
 
 interface ConfigTrigger {
     platform: ConfigPlatform;
@@ -74,18 +147,27 @@ interface ConfigAction {
 
 interface ConfigCondition {
     platform: ConfigPlatform;
+}
+
+interface ConfigEntityCondition extends ConfigCondition {
     entity: EntityId;
 }
 
-interface ConfigStateCondition extends ConfigCondition {
+interface ConfigStateCondition extends ConfigEntityCondition {
     attribute?: ConfigAttribute;
     state: ConfigStateType;
 }
 
-interface ConfigNumericStateCondition extends ConfigCondition {
+interface ConfigNumericStateCondition extends ConfigEntityCondition {
     attribute: ConfigAttribute;
     above?: number;
     below?: number;
+}
+
+interface ConfigTimeCondition extends ConfigCondition {
+    after?: TimeString;
+    before?: TimeString;
+    weekday?: string[];
 }
 
 type ConfigAutomations = {
@@ -186,11 +268,6 @@ class AutomationsExtension {
 
             const conditions = automation.condition ? toArray(automation.condition) : [];
             for (const condition of conditions) {
-                if (!condition.entity) {
-                    this.logger.warning('Config validation error: condition entity not specified');
-                    return result;
-                }
-
                 if (!platforms.includes(condition.platform)) {
                     this.logger.warning(`Config validation error: unknown condition platform '${condition.platform}'`);
                     return result;
@@ -288,9 +365,39 @@ class AutomationsExtension {
     }
 
     private checkCondition(condition: ConfigCondition): boolean {
+        if (condition.platform === ConfigPlatform.TIME) {
+            return this.checkTimeCondition(condition as ConfigTimeCondition);
+        }
+        return this.checkEntityCondition(condition as ConfigEntityCondition);
+    }
+
+    private checkTimeCondition(condition: ConfigTimeCondition): boolean {
+        const beforeStr = condition.before || '23:59:59';
+        const afterStr = condition.after || '00:00:00';
+        const weekday = condition.weekday || WEEK;
+
+        try {
+            const after = new Time(afterStr);
+            const before = new Time(beforeStr);
+            const current = new Time()
+            const now = new Date();
+            const day = now.getDay();
+            return current.isInRange(after, before) && weekday.includes(WEEK[day]);
+        } catch (e: any) {
+            this.logger.warning(e);
+            return true;
+        }
+    }
+
+    private checkEntityCondition(condition: ConfigEntityCondition): boolean {
+        if (!condition.entity) {
+            this.logger.warning('Config validation error: condition entity not specified');
+            return true;
+        }
+
         const entity = this.zigbee.resolveEntity(condition.entity);
         if (!entity) {
-            this.logger.debug(`Condition not found for entity '${condition.entity}'`);
+            this.logger.warning(`Condition not found for entity '${condition.entity}'`);
             return true;
         }
 
