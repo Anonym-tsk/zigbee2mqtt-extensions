@@ -274,7 +274,7 @@ _Example:_
 ```yaml
 condition:
   platform: time
-  after: '03:00:00'
+  after: '15:00:00'
   before: '02:00:00'
   weekday:
     - mon
