@@ -9,6 +9,8 @@ var ConfigPlatform;
 (function (ConfigPlatform) {
     ConfigPlatform["ACTION"] = "action";
     ConfigPlatform["STATE"] = "state";
+    ConfigPlatform["STATE_L1"] = "state_l1";
+    ConfigPlatform["STATE_L2"] = "state_l2";
     ConfigPlatform["NUMERIC_STATE"] = "numeric_state";
 })(ConfigPlatform || (ConfigPlatform = {}));
 var StateOnOff;
@@ -122,6 +124,28 @@ class AutomationsExtension {
             case ConfigPlatform.STATE:
                 trigger = configTrigger;
                 attribute = trigger.attribute || 'state';
+                if (!update.hasOwnProperty(attribute) || !from.hasOwnProperty(attribute) || !to.hasOwnProperty(attribute)) {
+                    return null;
+                }
+                if (from[attribute] === to[attribute]) {
+                    return null;
+                }
+                const states = toArray(trigger.state);
+                return states.includes(update[attribute]);
+            case ConfigPlatform.STATE_L1:
+                trigger = configTrigger;
+                attribute = trigger.attribute || 'state_l1';
+                if (!update.hasOwnProperty(attribute) || !from.hasOwnProperty(attribute) || !to.hasOwnProperty(attribute)) {
+                    return null;
+                }
+                if (from[attribute] === to[attribute]) {
+                    return null;
+                }
+                const states = toArray(trigger.state);
+                return states.includes(update[attribute]);
+            case ConfigPlatform.STATE_L2:
+                trigger = configTrigger;
+                attribute = trigger.attribute || 'state_l2';
                 if (!update.hasOwnProperty(attribute) || !from.hasOwnProperty(attribute) || !to.hasOwnProperty(attribute)) {
                     return null;
                 }
