@@ -141,8 +141,8 @@ class AutomationsExtension {
                 if (from[attribute] === to[attribute]) {
                     return null;
                 }
-                const states = toArray(trigger.state);
-                return states.includes(update[attribute]);
+                const states_l1 = toArray(trigger.state_l1);
+                return states_l1.includes(update[attribute]);
             case ConfigPlatform.STATE_L2:
                 trigger = configTrigger;
                 attribute = trigger.attribute || 'state_l2';
@@ -152,8 +152,8 @@ class AutomationsExtension {
                 if (from[attribute] === to[attribute]) {
                     return null;
                 }
-                const states = toArray(trigger.state);
-                return states.includes(update[attribute]);
+                const states_l2 = toArray(trigger.state_l2);
+                return states_l2.includes(update[attribute]);
             case ConfigPlatform.NUMERIC_STATE:
                 trigger = configTrigger;
                 attribute = trigger.attribute;
