@@ -24,7 +24,7 @@ jobs:
     - run: npm ci
     - run: npm run build --if-present
     - name: Upload release
-      uses: plutotcool/release@v2
+      uses: plutotcool/release@v2.0.0
       with:
         # dist/automations-extension.js
         publish: false
