@@ -24,11 +24,10 @@ jobs:
     - run: npm ci
     - run: npm run build --if-present
     - name: Upload release
-      uses: dev-build-deploy/release-me@v0
+      uses: plutotcool/release@v1
       with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        prefix: v
-        versioning: semver
-        files: |
-          dist/automations-extension.js
-          dependencies.json
+        # dist/automations-extension.js
+        publish: false
+        push: false
+        github_token:  ${{ secrets.GITHUB_TOKEN }}
+        npm_token: ${{ secrets.NPM_TOKEN }}
