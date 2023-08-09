@@ -21,7 +21,7 @@ jobs:
     - run: npm ci
     - run: npm run build --if-present
     - name: Upload release
-      uses: Shopify/upload-to-release@v1
+      uses: Shopify/upload-to-release@v1.0.1
       with:
         name: my-artifact
         path: dist/automations-extension.js
