@@ -16,11 +16,14 @@ Enjoy my work? [Help me out](https://yoomoney.ru/to/410019180291197) for a coupl
 
 **Allows you to set up simple automations directly in z2m**
 
+You need to restart Z2M after you make changes into configuration file.
+
+
 _Example (add this into your z2m configuration.yaml):_
 
 ```yaml
 automations:
-  automation_by_action:
+  automation_by_action_example:
     trigger:
       platform: action
       entity: Test Switch
@@ -33,7 +36,7 @@ automations:
       entity: Test Plug
       service: toggle
 
-  automation_by_state:
+  automation_by_state_example:
     trigger:
       platform: state
       entity: Test Plug
@@ -42,7 +45,7 @@ automations:
       entity: Test Plug 2
       service: turn_on
 
-  automation_by_numeric_state:
+  automation_by_numeric_state_example:
     trigger:
       platform: numeric_state
       entity: Test Plug
