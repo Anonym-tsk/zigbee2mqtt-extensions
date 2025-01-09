@@ -1,3 +1,4 @@
+"use strict";
 const stringify = require("json-stable-stringify-without-jsonify");
 const crypto = require("crypto");
 const yaml_1 = require("../util/yaml");
@@ -104,12 +105,15 @@ class InternalLogger {
     }
 }
 class AutomationsExtension {
-    constructor(zigbee, mqtt, state, publishEntityState, eventBus, settings, baseLogger) {
+    constructor(zigbee, mqtt, state, publishEntityState, eventBus, enableDisableExtension, restartCallback, addExtension, settings, baseLogger) {
         this.zigbee = zigbee;
         this.mqtt = mqtt;
         this.state = state;
         this.publishEntityState = publishEntityState;
         this.eventBus = eventBus;
+        this.enableDisableExtension = enableDisableExtension;
+        this.restartCallback = restartCallback;
+        this.addExtension = addExtension;
         this.settings = settings;
         this.logger = new InternalLogger(baseLogger);
         this.mqttBaseTopic = settings.get().mqtt.base_topic;

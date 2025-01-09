@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "description": "Zigbee2MQTT Extensions",
   "devDependencies": {
-    "@types/node": "^18.15.12",
-    "typescript": "^5.0.4",
-    "zigbee2mqtt": "^1.30.3"
+    "@types/node": "^22.10.5",
+    "typescript": "^5.7.3",
+    "zigbee2mqtt": "^2.0.0"
   },
   "scripts": {
     "start": "tsc --watch",
