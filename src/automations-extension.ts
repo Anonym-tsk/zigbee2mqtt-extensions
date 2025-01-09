@@ -10,7 +10,7 @@ import type Zigbee from 'zigbee2mqtt/dist/zigbee';
 import type MQTT from 'zigbee2mqtt/dist/mqtt';
 import type State from 'zigbee2mqtt/dist/state';
 import type EventBus from 'zigbee2mqtt/dist/eventBus';
-import type Extension from 'zigbee2mqtt/dist/extension/Extension';
+import type Extension from 'zigbee2mqtt/dist/extension/extension';
 import type Settings from 'zigbee2mqtt/dist/util/settings';
 import type Logger from 'zigbee2mqtt/dist/util/logger';
 
